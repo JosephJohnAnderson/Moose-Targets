@@ -1,5 +1,7 @@
-# Import the moose data
+## Prerequisites ####
 library(readr)
-
-# GLMM
 library(lmer)
+
+# Import the data ####
+
+## GLMM ####

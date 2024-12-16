@@ -32,7 +32,15 @@ Big_data <- Big_data %>%
   left_join(Moose_density, by = c("Registreri", "InvAr" = "År"))
 
 
-## GLMM with big data ####
-library(lme4)
-glmm_model <- lmer(`mean_seasonal_snowdepth[cm]` ~ ArsskadaTallAndel + (1 | Registreri), 
-                   data = Big_data)
+## betareg with big data ####
+library(betareg)
+
+# RASE per hectare
+RASE_Ha_model <- betareg(AntalRASEHa ~ scale(varaible1) + scale(varaible2) + scale(varaible3) + 
+                           scale(varaible4) + scale(varaible5) + scale(varaible6) +
+                           scale(mvaraible7), data = Big_data, na.action=na.exclude)
+
+# RASE at competitive height
+RASE_competative_model <- betareg(RASEAndelGynnsam ~ scale(varaible1) + scale(varaible2) + scale(varaible3) + 
+                        scale(varaible4) + scale(varaible5) + scale(varaible6) +
+                        scale(mvaraible7), data = Big_data, na.action=na.exclude)

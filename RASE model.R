@@ -49,7 +49,15 @@ Ungulate_data <- read.xlsx("//storage-um.slu.se/restricted$/vfm/Vilt-Skog/Moose-
     # Mutate ungulate_data "MMA" column
       Ungulate_data <- Ungulate_data %>%
       mutate(Registreri = str_sub(`MMA`))
+      
+    # Convert Red100 to numeric
+      Ungulate_data <- Ungulate_data %>%
+      mutate(Red100 = as.numeric(Red100))
 
+    # Convert Red1000 to numeric
+      Ungulate_data <- Ungulate_data %>%
+      mutate(Red1000 = as.numeric(Red1000))
+      
 # Calves per female      
 Calves_per_female <- read.xlsx("//storage-um.slu.se/restricted$/vfm/Vilt-Skog/Moose-Targets/Calves per female and proportion of males 2013-2023/Kalv per hondjur och Andel tjur 2013-2023 Nuvarande gränser.xlsx", sheet = "Kalv per hondjur")
 
@@ -141,30 +149,62 @@ Big_data <- Big_data %>%
 Big_data <- Big_data %>%
   left_join(Ungulate_data, by = c("Registreri", "InvAr" = "Year"))
 
-## Generalised linear model with big data ####
+## Generalised linear mixed model with big data ####
 
-# RASE per hectare GLM
+# RASE per hectare 
 library(lme4)
-RASE_Ha_glm <- glmer(AntalRASEHa ~ scale(Älgtäthet.i.vinterstam) + scale(FD1000) + scale(AntalTallarHa) + 
-                          scale(AntalGranarHa) + scale(Roe1000) + scale(AndelMargraMarker) + (1 | InvAr) + (1 | Registreri), 
-                          family = poisson, data = Big_data, na.action = na.exclude)
-summary(RASE_Ha_model)
+RASE_Ha_glm <- glmer(AntalRASEHa ~ scale(Älgtäthet.i.vinterstam) + scale(Roe1000) + scale(FD1000) +
+                          scale(AntalGranarHa) + scale(AntalTallarHa) + scale(AndelMargraMarker) +
+                          scale(`Mean_seasonal_temp[c]`) + (1 | InvAr) + (1 | Registreri), 
+                        family = poisson, data = Big_data, na.action = na.exclude)
 
-# RASE per hectare Beta regression
-library(betareg)
-RASE_Ha_betar <- betareg(scale(AntalRASEHa) ~ scale(varaible1) + scale(varaible2) + scale(varaible3) + 
-                          scale(varaible4) + scale(varaible5) + scale(varaible6) +
-                          scale(mvaraible7), data = Big_data, na.action=na.exclude)
-summary(RASE_Ha_betar)
-
-# RASE per hectare GLM
-library(lme4)
-RASE_Ha_model <- glmer(AntalRASEHa ~ scale(Älgtäthet.i.vinterstam) + scale(FD1000) + scale(AntalTallarHa) + 
-                          scale(AntalGranarHa) + scale(Roe1000) + scale(AndelMargraMarker) + (1 | InvAr) + (1 | Registreri), 
-                          family = poisson, data = Big_data, na.action = na.exclude)
-summary(RASE_Ha_model)
+summary(RASE_Ha_glm)
 
 # RASE at competitive height
-RASE_competative_model <- betareg(RASEAndelGynnsam ~ scale(varaible1) + scale(varaible2) + scale(varaible3) + 
-                        scale(varaible4) + scale(varaible5) + scale(varaible6) +
-                        scale(mvaraible7), data = Big_data, na.action=na.exclude)
+library(betareg)
+RASE_competative_betar <- betareg(RASEAndelGynnsam ~ scale(AntalTallarHa) + scale(AntalGranarHa) + 
+                                    scale(Älgtäthet.i.vinterstam) +  scale(Roe1000) + 
+                                    scale(FD1000) +  scale(AndelMargraMarker) + 
+                                    scale(`Mean_seasonal_temp[c]`), 
+                                  data = Big_data, na.action = na.exclude)
+
+summary(RASE_competative_betar)
+
+
+## Beta regression ####
+library(betareg)
+
+# Create a version of Big_data for rescaled variables
+Big_data_beta <- Big_data
+
+# Use a min-max normalisation to rescale each variable
+normalize <- function(x) {
+  (x - min(x, na.rm = TRUE)) / (max(x, na.rm = TRUE) - min(x, na.rm = TRUE))
+}
+
+# Apply to all tested variables
+#Create list of all varaibles
+variables_to_normalize <- c("RASEAndelGynnsam", "AntalRASEHa", "AntalTallarHa", "AntalGranarHa", 
+                            "Älgtäthet.i.vinterstam", "Roe1000", "FD1000", 
+                            "AndelMargraMarker", "Mean_seasonal_temp[c]")
+
+# Then normalise them
+Big_data_beta[variables_to_normalize] <- lapply(Big_data_beta[variables_to_normalize], normalize)
+
+# After normalization, ensure no variables contain exact 0 or 1, especially the response variable
+Big_data_beta$AntalRASEHa <- (Big_data_beta$AntalRASEHa * (nrow(Big_data_beta) - 1) + 0.5) / nrow(Big_data_beta)
+
+Big_data_beta$RASEAndelGynnsam <- (Big_data_beta$AntalRASEAndelGynnsam * (nrow(Big_data_beta) - 1) + 0.5) / nrow(Big_data_beta)
+
+# Run beta regressions
+# RASE per hectare 
+RASE_Ha_betar <- betareg(AntalRASEHa ~ AntalTallarHa + AntalGranarHa + 
+                           Älgtäthet.i.vinterstam + Roe1000 + 
+                           FD1000 + AndelMargraMarker + 
+                           `Mean_seasonal_temp[c]`, 
+                         data = Big_data_beta, na.action = na.exclude)
+
+summary(RASE_Ha_betar)
+
+
+

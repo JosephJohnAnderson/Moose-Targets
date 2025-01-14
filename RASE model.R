@@ -150,9 +150,23 @@ Big_data <- Big_data %>%
   left_join(Ungulate_data, by = c("Registreri", "InvAr" = "Year"))
 
 ## Generalised linear mixed model with big data ####
+library(lme4)
+library(betareg)
+
+# Check for potential co-linearity
+# Calculate correlation matrix
+cor_matrix <- cor(Big_data[, c("Älgtäthet.i.vinterstam", "Roe1000", "FD1000", "Red1000", 
+                                        "AntalGranarHa", "AntalTallarHa", "AndelMargraMarker", 
+                                        "Mean_seasonal_temp[c]")], method = "pearson", use = "pairwise.complete.obs")
+
+# Filter correlations greater than 0.7 or less than -0.7, excluding 1
+filtered_cor <- cor_matrix
+filtered_cor[abs(filtered_cor) <= 0.7 | abs(filtered_cor) == 1] <- NA
+
+# View the filtered correlation matrix
+filtered_cor
 
 # RASE per hectare 
-library(lme4)
 RASE_Ha_glm <- glmer(AntalRASEHa ~ scale(Älgtäthet.i.vinterstam) + scale(Roe1000) + scale(FD1000) +
                           scale(AntalGranarHa) + scale(AntalTallarHa) + scale(AndelMargraMarker) +
                           scale(`Mean_seasonal_temp[c]`) + (1 | InvAr) + (1 | Registreri), 

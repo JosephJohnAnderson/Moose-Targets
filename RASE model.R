@@ -152,12 +152,26 @@ Big_data <- Big_data %>%
 ## Generalised linear mixed model with big data ####
 library(lme4)
 library(betareg)
+library(MuMIn)
+
+# Select the most relevant ecological variables for RASE per ha. (AntalRASEHa) and 
+# % RASE at competative height (RASEAndelGynnsam)
+RASE_data <- Big_data %>%
+  dplyr::select(AntalRASEHa, RASEAndelGynnsam, Älgtäthet.i.vinterstam, Roe1000, FD1000, Red1000,
+                AntalGranarHa, AntalTallarHa, AndelMargraMarker, 
+                `Mean_seasonal_temp[c]`, `Mean_seasonal_precipitation[mm]`, `mean_seasonal_snowdepth[cm]`,
+                BestHojdAllaAVG, InvAr, Registreri)
+
+# remove rows with NA values (need for model selection)
+RASE_data_clean <- na.omit(RASE_data)
+
 
 # Check for potential co-linearity
 # Calculate correlation matrix
-cor_matrix <- cor(Big_data[, c("Älgtäthet.i.vinterstam", "Roe1000", "FD1000", "Red1000", 
+cor_matrix <- cor(RASE_data_clean[, c("Älgtäthet.i.vinterstam", "Roe1000", "FD1000", "Red1000", 
                                         "AntalGranarHa", "AntalTallarHa", "AndelMargraMarker", 
-                                        "Mean_seasonal_temp[c]")], method = "pearson", use = "pairwise.complete.obs")
+                                        "Mean_seasonal_temp[c]", "Mean_seasonal_precipitation[mm]", "`mean_seasonal_snowdepth[cm]`",
+                                        "BestHojdAllaAVG")], method = "pearson")
 
 # Filter correlations greater than 0.7 or less than -0.7, excluding 1
 filtered_cor <- cor_matrix
@@ -168,11 +182,29 @@ filtered_cor
 
 # RASE per hectare 
 RASE_Ha_glm <- glmer(AntalRASEHa ~ scale(Älgtäthet.i.vinterstam) + scale(Roe1000) + scale(FD1000) +
-                          scale(AntalGranarHa) + scale(AntalTallarHa) + scale(AndelMargraMarker) +
-                          scale(`Mean_seasonal_temp[c]`) + (1 | InvAr) + (1 | Registreri), 
-                        family = poisson, data = Big_data, na.action = na.exclude)
+                          scale(AntalTallarHa) + scale(BestHojdAllaAVG) + scale(AndelMargraMarker) +
+                          scale(`Mean_seasonal_precipitation[mm]`) + (1 | InvAr) + (1 | Registreri), 
+                        family = poisson, data = RASE_data, na.action = na.exclude)
 
 summary(RASE_Ha_glm)
+
+# Run model selection 
+options(na.action = "na.fail")  # Prevent `dredge` from failing silently due to missing data
+dredged_RASEglm <- dredge(RASE_Ha_glm)
+summary(dredged_RASEglm)
+
+# Get the best model (rank 1)
+best_RASEglm <- get.models(dredged_RASEglm, 1)
+summary(best_RASEglm)
+
+
+
+
+
+
+
+
+
 
 # RASE at competitive height
 library(betareg)
@@ -184,12 +216,20 @@ RASE_competative_betar <- betareg(RASEAndelGynnsam ~ scale(AntalTallarHa) + scal
 
 summary(RASE_competative_betar)
 
+# Run model selection 
+options(na.action = "na.fail")  # Prevent `dredge` from failing silently due to missing data
+dredged_RASEbetar <- dredge(RASE_competative_betar)
+summary(dredged_RASEbetar)
+
+# Get the best model (rank 1)
+best_RASEbetar <- get.models(dredged_RASEbetar, 1)
+summary(best_RASEbetar)
 
 ## Beta regression ####
 library(betareg)
 
-# Create a version of Big_data for rescaled variables
-Big_data_beta <- Big_data
+# Create a version of RASE_data for rescaled variables
+RASE_data_beta <- RASE_data
 
 # Use a min-max normalisation to rescale each variable
 normalize <- function(x) {
@@ -203,12 +243,12 @@ variables_to_normalize <- c("RASEAndelGynnsam", "AntalRASEHa", "AntalTallarHa", 
                             "AndelMargraMarker", "Mean_seasonal_temp[c]")
 
 # Then normalise them
-Big_data_beta[variables_to_normalize] <- lapply(Big_data_beta[variables_to_normalize], normalize)
+RASE_data_beta[variables_to_normalize] <- lapply(RASE_data_beta[variables_to_normalize], normalize)
 
 # After normalization, ensure no variables contain exact 0 or 1, especially the response variable
-Big_data_beta$AntalRASEHa <- (Big_data_beta$AntalRASEHa * (nrow(Big_data_beta) - 1) + 0.5) / nrow(Big_data_beta)
+RASE_data_beta$AntalRASEHa <- (RASE_data_beta$AntalRASEHa * (nrow(RASE_data_beta) - 1) + 0.5) / nrow(RASE_data_beta)
 
-Big_data_beta$RASEAndelGynnsam <- (Big_data_beta$AntalRASEAndelGynnsam * (nrow(Big_data_beta) - 1) + 0.5) / nrow(Big_data_beta)
+RASE_data_beta$RASEAndelGynnsam <- (RASE_data_beta$AntalRASEAndelGynnsam * (nrow(RASE_data_beta) - 1) + 0.5) / nrow(RASE_data_beta)
 
 # Run beta regressions
 # RASE per hectare 
@@ -216,9 +256,15 @@ RASE_Ha_betar <- betareg(AntalRASEHa ~ AntalTallarHa + AntalGranarHa +
                            Älgtäthet.i.vinterstam + Roe1000 + 
                            FD1000 + AndelMargraMarker + 
                            `Mean_seasonal_temp[c]`, 
-                         data = Big_data_beta, na.action = na.exclude)
+                         data = RASE_data_beta, na.action = na.exclude)
 
 summary(RASE_Ha_betar)
 
+# Run model selection 
+options(na.action = "na.fail")  # Prevent `dredge` from failing silently due to missing data
+dredged_RASEglm <- dredge(RASE_Ha_glm)
+summary(dredged_RASEglm)
 
-
+# Get the best model (rank 1)
+best_RASEglm <- get.models(dredged_RASEglm, 1)
+summary(best_RASEglm)

@@ -160,7 +160,7 @@ RASE_data <- Big_data %>%
   dplyr::select(AntalRASEHa, RASEAndelGynnsam, Älgtäthet.i.vinterstam, Roe1000, FD1000, Red1000,
                 AntalGranarHa, AntalTallarHa, AndelMargraMarker, 
                 `Mean_seasonal_temp[c]`, `Mean_seasonal_precipitation[mm]`, `mean_seasonal_snowdepth[cm]`,
-                BestHojdAllaAVG, InvAr, Registreri)
+                BestHojdAllaAVG, BestandAlder, InvAr, Registreri)
 
 # remove rows with NA values (need for model selection)
 RASE_data_clean <- na.omit(RASE_data)
@@ -170,8 +170,8 @@ RASE_data_clean <- na.omit(RASE_data)
 # Calculate correlation matrix
 cor_matrix <- cor(RASE_data_clean[, c("Älgtäthet.i.vinterstam", "Roe1000", "FD1000", "Red1000", 
                                         "AntalGranarHa", "AntalTallarHa", "AndelMargraMarker", 
-                                        "Mean_seasonal_temp[c]", "Mean_seasonal_precipitation[mm]", "`mean_seasonal_snowdepth[cm]`",
-                                        "BestHojdAllaAVG")], method = "pearson")
+                                        "Mean_seasonal_temp[c]", "Mean_seasonal_precipitation[mm]", "mean_seasonal_snowdepth[cm]",
+                                        "BestHojdAllaAVG", "BestandAlder")], method = "pearson")
 
 # Filter correlations greater than 0.7 or less than -0.7, excluding 1
 filtered_cor <- cor_matrix

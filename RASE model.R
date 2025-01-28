@@ -167,15 +167,14 @@ RASE_data_18_23 <- RASE_data %>%
   filter(InvAr %in% c(2018, 2019, 2020, 2021, 2022, 2023, 2024))
 
 # remove rows with NA values (need for model selection)
-RASE_data_clean <- na.omit(RASE_data)
-
+RASE_data_NA <- na.omit(RASE_data_18_23)
 
 # Check for potential co-linearity
 # Calculate correlation matrix
-cor_matrix <- cor(RASE_data_clean[, c("Älgtäthet.i.vinterstam", "Roe1000", "FD1000", "Red1000", 
+cor_matrix <- cor(RASE_data_18_23[, c("Älgtäthet.i.vinterstam", "Roe1000", "FD1000", "Red1000", 
                                         "AntalGranarHa", "AntalTallarHa", "AndelMargraMarker", 
                                         "Mean_seasonal_temp[c]", "Mean_seasonal_precipitation[mm]", "mean_seasonal_snowdepth[cm]",
-                                        "BestHojdAllaAVG", "BestandAlder")], method = "pearson", use = "pairwise complete obs")
+                                        "BestHojdAllaAVG", "BestandAlder")], method = "pearson", use = "pairwise.complete.obs")
 
 # Filter correlations greater than 0.7 or less than -0.7, excluding 1
 filtered_cor <- cor_matrix

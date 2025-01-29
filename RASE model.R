@@ -11,7 +11,7 @@ SKS_ABIN <- read.xlsx("//storage-um.slu.se/restricted$/vfm/Vilt-Skog/Moose-Targe
                       sheet = "Data")
 
 # SMHI data
-Weather <- read.xlsx("//storage-um.slu.se/restricted$/vfm/Vilt-Skog/Moose-Targets/SMHI/MMA_full_weather_data_13_01_2025.xlsx")
+Weather <- read.xlsx("//storage-um.slu.se/restricted$/vfm/Vilt-Skog/Moose-Targets/SMHI/MMA_full_weather_data_with_imputed_NAs_21_01_2025.xlsx")
 
     # Set InvAr to numeric
       Weather$InvAr <- as.numeric(Weather$InvAr)
@@ -159,12 +159,15 @@ library(MuMIn)
 RASE_data <- Big_data %>%
   dplyr::select(AntalRASEHa, RASEAndelGynnsam, Älgtäthet.i.vinterstam, Roe1000, FD1000, Red1000,
                 AntalGranarHa, AntalTallarHa, AndelMargraMarker, 
-                `Mean_seasonal_temp[c]`, `Mean_seasonal_precipitation[mm]`, `mean_seasonal_snowdepth[cm]`,
+                `Mean_seasonal_temp[c]_imputed`, `Mean_seasonal_precipitation[mm]_imputed`, `mean_seasonal_snowdepth[cm]_imputed`,
                 BestHojdAllaAVG, BestandAlder, InvAr, Registreri)
 
 # Take data form 2018 onwwards when RASE per ha. (AntalRASEHa) is actually measureed
 RASE_data_18_23 <- RASE_data %>%
   filter(InvAr %in% c(2018, 2019, 2020, 2021, 2022, 2023, 2024))
+
+# See which variables have most NA and consider removing them
+sort(colSums(is.na(RASE_data_18_23)), decreasing = TRUE)
 
 # remove rows with NA values (need for model selection)
 RASE_data_NA <- na.omit(RASE_data_18_23)
@@ -173,8 +176,9 @@ RASE_data_NA <- na.omit(RASE_data_18_23)
 # Calculate correlation matrix
 cor_matrix <- cor(RASE_data_18_23[, c("Älgtäthet.i.vinterstam", "Roe1000", "FD1000", "Red1000", 
                                         "AntalGranarHa", "AntalTallarHa", "AndelMargraMarker", 
-                                        "Mean_seasonal_temp[c]", "Mean_seasonal_precipitation[mm]", "mean_seasonal_snowdepth[cm]",
-                                        "BestHojdAllaAVG", "BestandAlder")], method = "pearson", use = "pairwise.complete.obs")
+                                        "Mean_seasonal_temp[c]_imputed", "Mean_seasonal_precipitation[mm]_imputed",
+                                        "mean_seasonal_snowdepth[cm]_imputed", "BestHojdAllaAVG", "BestandAlder")], 
+                                    method = "pearson", use = "pairwise.complete.obs")
 
 # Filter correlations greater than 0.7 or less than -0.7, excluding 1
 filtered_cor <- cor_matrix
@@ -186,8 +190,8 @@ filtered_cor
 # RASE per hectare 
 RASE_Ha_glm <- glmer(AntalRASEHa ~ scale(Älgtäthet.i.vinterstam) + scale(Roe1000) + scale(FD1000) +
                           scale(AntalTallarHa) + scale(BestHojdAllaAVG) + scale(AndelMargraMarker) +
-                          scale(`Mean_seasonal_precipitation[mm]`) + (1 | InvAr) + (1 | Registreri), 
-                        family = poisson, data = RASE_data, na.action = na.exclude)
+                          scale(`mean_seasonal_snowdepth[cm]_imputed`) + (1 | InvAr) + (1 | Registreri), 
+                        family = poisson, data = RASE_data_18_23, na.action = na.exclude)
 
 summary(RASE_Ha_glm)
 

@@ -10,6 +10,9 @@ library(stringr)
 SKS_ABIN <- read.xlsx("//storage-um.slu.se/restricted$/vfm/Vilt-Skog/Moose-Targets/SKS/SKS_ABIN.xlsx", 
                       sheet = "Data")
 
+# ABIN data
+Young_forest <- read.csv("//storage-um.slu.se/restricted$/vfm/Vilt-Skog/Moose-Targets/SKS/YoungForest_prop_results.csv")
+
 # SMHI data
 Weather <- read.xlsx("//storage-um.slu.se/restricted$/vfm/Vilt-Skog/Moose-Targets/SMHI/MMA_full_weather_data_with_imputed_NAs_21_01_2025.xlsx")
 
@@ -121,10 +124,14 @@ Calf_weights <- read.csv("//storage-um.slu.se/restricted$/vfm/Vilt-Skog/Moose-Ta
 
 ## Join data ####
 
+# Add young forest area to data set
+Big_data <- Weather %>%
+  left_join(Young_forest, by = c("Registreri" = "moose_area_id", "InvAr" = "year"))      
+      
 # Add weather data to big data set
-Big_data <- SKS_ABIN %>%
-  left_join(Weather, by = c("Registreri", "InvAr"))
-
+Big_data <- Big_data %>%
+  left_join(SKS_ABIN, by = c("Registreri", "InvAr"))
+      
 # Add moose densities
 Big_data <- Big_data %>%
   left_join(Moose_density, by = c("Registreri", "InvAr" = "ÄBINår"))
@@ -153,13 +160,21 @@ Big_data <- Big_data %>%
 Big_data <- Big_data %>%
   left_join(Ungulate_data, by = c("Registreri", "InvAr" = "Year"))
 
+## Calculate and add ungulate index ####
+# Calculate ungulate_index, replacing NA with 0
+Big_data$ungulate_index <- (
+  (Big_data$Roe1000/7.37) + 
+  (Big_data$Red1000/2.07) + 
+  (Big_data$FD1000/4.45)
+)
+
 ## Model data selection model with big data ####
 
 # Select the most relevant ecological variables for RASE per ha. (AntalRASEHa) and 
 # % RASE at competative height (RASEAndelGynnsam)
 RASE_data <- Big_data %>%
-  dplyr::select(AntalRASEHa, RASEAndelGynnsam, Älgtäthet.i.vinterstam, Roe1000, FD1000, Red1000,
-                AntalGranarHa, AntalTallarHa, AndelBordigaMarker, 
+  dplyr::select(AntalRASEHa, RASEAndelGynnsam, Älgtäthet.i.vinterstam, Roe1000, FD1000, Red1000, WB1000, ungulate_index,
+                AntalGranarHa, AntalTallarHa, AntalBjorkarHa, AndelBordigaMarker, youngforest_area_ha, proportion_young_forest,
                 `Mean_seasonal_temp[c]_imputed`, `Mean_seasonal_precipitation[mm]_imputed`, `mean_seasonal_snowdepth[cm]_imputed`,
                 prop_snow_20_plus, BestHojdAllaAVG, BestandAlder, InvAr, Registreri)
 
@@ -175,10 +190,10 @@ RASE_data_NA <- na.omit(RASE_data_18_23)
 
 # Check for potential co-linearity
 # Calculate correlation matrix
-cor_matrix <- cor(RASE_data_NA[, c("Älgtäthet.i.vinterstam", "Roe1000", "FD1000", "Red1000", 
-                                        "AntalGranarHa", "AntalTallarHa", "AndelBordigaMarker", 
-                                        "Mean_seasonal_temp[c]_imputed", "Mean_seasonal_precipitation[mm]_imputed",
-                                        "prop_snow_20_plus", "BestHojdAllaAVG", "BestandAlder")], 
+cor_matrix <- cor(RASE_data_NA[, c("Älgtäthet.i.vinterstam", "ungulate_index", "WB1000", # Browsers
+                                        "BestHojdAllaAVG", "BestandAlder", "AndelBordigaMarker", "youngforest_area_ha", "proportion_young_forest", # Site
+                                        "AntalGranarHa", "AntalTallarHa", "AntalBjorkarHa", # Competitor species
+                                        "Mean_seasonal_temp[c]_imputed", "Mean_seasonal_precipitation[mm]_imputed","mean_seasonal_snowdepth[cm]_imputed")], # Climate
                                     method = "pearson", use = "pairwise.complete.obs")
 
 # Filter correlations greater than 0.7 or less than -0.7, excluding 1
@@ -194,15 +209,14 @@ library(betareg)
 library(MuMIn)
 library(sjPlot)
 
-RASE_Ha_glm <- glmer(AntalRASEHa ~ scale(Älgtäthet.i.vinterstam) + scale(Roe1000) + scale(FD1000) +
-                          scale(AntalTallarHa) + scale(BestHojdAllaAVG) +  scale(BestandAlder) + scale(AndelBordigaMarker) +
-                          scale(`Mean_seasonal_precipitation[mm]_imputed`) + (1 | InvAr) + (1 | Registreri), 
+RASE_Ha_glm <- glmer(AntalRASEHa ~ scale(Älgtäthet.i.vinterstam) + scale(ungulate_index) + scale(WB1000) + # Browsers
+                          scale(AntalTallarHa) + scale(AntalBjorkarHa) + # Other trees
+                          scale(proportion_young_forest) +  scale(BestandAlder) + scale(AndelBordigaMarker) + # Forest
+                          scale(`mean_seasonal_snowdepth[cm]_imputed`) + # Climate
+                          (1 | InvAr) + (1 | Registreri), # Random effects
                         family = poisson, data = RASE_data_NA)
 
 summary(RASE_Ha_glm)
-
-# Plot fixed effects from the GLMM
-plot_model(RASE_Ha_glm, type = "est", show.values = TRUE, show.p = TRUE)
 
 # Run model selection 
 options(na.action = "na.fail")  # Prevent `dredge` from failing silently due to missing data
@@ -212,6 +226,9 @@ summary(dredged_RASEglm)
 # Get the best model (rank 1)
 best_RASEglm <- get.models(dredged_RASEglm, subset = 1)[[1]]
 summary(best_RASEglm)
+
+# Plot fixed effects from the GLMM
+plot_model(best_RASEglm, type = "est", show.values = TRUE, show.p = TRUE)
 
 ## RASE at competitive height ####
 library(betareg)

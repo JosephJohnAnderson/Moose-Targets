@@ -180,9 +180,34 @@ RASE_data <- Big_data %>%
                 `Mean_seasonal_temp[c]_imputed`, `Mean_seasonal_precipitation[mm]_imputed`, `mean_seasonal_snowdepth[cm]_imputed`, # Climate
                 InvAr, Registreri) # Random effects
 
+# Rename variables for plotting later
+dplyr::rename(
+  Moose_density= Älgtäthet.i.vinterstam,
+  Roe_deer_density= Roe1000,
+  Fallow_deer_density = FD1000,
+  Red_deer_density = Red1000,
+  Wild_boar_density = WB1000,
+  Ungulate_index = ungulate_index,
+  Young_forest_Ha = youngforest_area_ha,
+  Proportion_young_forest = proportion_young_forest,
+  Propotion_on_fertile_soils = AndelBordigaMarker,
+  AvgHeight = BestHojdAllaAVG,
+  StandAge = BestandAlder,
+  PineDensity = AntalGranarHa,
+  SpruceDensity = AntalTallarHa,
+  BirchDensity = AntalBjorkarHa,
+  MeanTemp = `Mean_seasonal_temp[c]_imputed`,
+  MeanPrecip = `Mean_seasonal_precipitation[mm]_imputed`,
+  MeanSnowDepth = `mean_seasonal_snowdepth[cm]_imputed`
+)
+
+# View the first few rows to check the selection and renaming
+head(RASE_data)
+
+
 # Take data form 2018 onwwards when RASE per ha. (AntalRASEHa) is actually measureed
 RASE_data_18_23 <- RASE_data %>%
-  filter(InvAr %in% c(2018, 2019, 2020, 2021, 2022, 2023))
+  filter(InvAr %in% c(2018, 2019, 2020, 2021))
 
 # See which variables have most NA and consider removing them
 sort(colSums(is.na(RASE_data_18_23)), decreasing = TRUE)
@@ -215,10 +240,11 @@ glm_RASE_Ha_snow <- glmer(AntalRASEHa ~ scale(`mean_seasonal_snowdepth[cm]_imput
 AIC(glm_RASE_Ha_temp, glm_RASE_Ha_precip, glm_RASE_Ha_snow)
 
 ## RASE per hectare ####
+library(dplyr)
 library(lme4)
-library(betareg)
 library(MuMIn)
 library(sjPlot)
+library(ggplot2)
 
 glm_RASE_Ha <- glmer(AntalRASEHa ~ scale(Älgtäthet.i.vinterstam) + scale(FD1000) + scale(WB1000) +  
                        scale(AntalTallarHa) + scale(AntalBjorkarHa) + 
@@ -238,18 +264,47 @@ best_glm_RASE <- get.models(dredged_glm_RASE, subset = 1)[[1]]
 summary(best_glm_RASE)
 
 # Plot fixed effects from the GLMM
-plot_model(best_glm_RASE, type = "est", show.values = TRUE, show.p = TRUE)
+# Extract coefficients for the fixed effects
+coef_glm <- summary(glm_RASE_Ha)$coefficients
+fixed_effects_glm <- data.frame(
+  Term = rownames(coef_glm),
+  Estimate = coef_glm[, "Estimate"],
+  SE = coef_glm[, "Std. Error"],
+  z_value = coef_glm[, "z value"],
+  p_value = coef_glm[, "Pr(>|z|)"]
+)
+
+# Remove the intercept term from the data
+fixed_effects_glm <- fixed_effects_glm[fixed_effects_glm$Term != "(Intercept)", ]
+
+# Add significance markers based on p-values
+fixed_effects_glm$Significance <- case_when(
+  fixed_effects_glm$p_value < 0.001 ~ "***",
+  fixed_effects_glm$p_value < 0.01  ~ "**",
+  fixed_effects_glm$p_value < 0.05  ~ "*",
+  TRUE ~ ""
+)
+
+# Plot with ggplot2
+ggplot(fixed_effects_glm, aes(x = Term, y = Estimate, ymin = Estimate - 1.96 * SE, ymax = Estimate + 1.96 * SE)) +
+  geom_pointrange() +
+  geom_hline(yintercept = 0, linetype = "solid", size = 1.2, color = "black") +  # Add thick line at 0
+  geom_text(aes(label = Significance), vjust = -1, size = 5) +  # Add significance asterisks
+  coord_flip() +  # To flip the x-axis for better readability
+  theme_minimal() +
+  labs(title = "Fixed Effects from GLMM (Poisson)", y = "Estimate") +
+  theme(axis.text.x = element_text(size = 10))
 
 ## RASE at competitive height ####
-library(betareg)
-library(lme4)
+library(dplyr)
 library(betareg)
 library(MuMIn)
-library(sjPlot)
-RASE_competative_betar <- betareg(RASEAndelGynnsam ~ scale(AntalTallarHa) + scale(AntalGranarHa) + 
-                                    scale(Älgtäthet.i.vinterstam) +  scale(Roe1000) + 
-                                    scale(FD1000) +  scale(AndelMargraMarker) + 
-                                    scale(`Mean_seasonal_temp[c]`), 
+library(ggplot2)
+
+RASE_competative_betar <- betareg(RASEAndelGynnsam ~ scale(Älgtäthet.i.vinterstam) + scale(FD1000) + scale(WB1000) +  
+                                    scale(AntalTallarHa) + scale(AntalBjorkarHa) + 
+                                    scale(proportion_young_forest) + scale(AndelBordigaMarker) + scale(youngforest_area_ha) + 
+                                    scale(`mean_seasonal_snowdepth[cm]_imputed`) + scale(`Mean_seasonal_precipitation[mm]_imputed`), 
                                   data = Big_data, na.action = na.exclude)
 
 summary(RASE_competative_betar)
@@ -265,3 +320,36 @@ summary(dredged_RASEbetar)
 # Get the best model (rank 1)
 best_RASEbetar <- get.models(dredged_RASEbetar, subset = 1)[[1]]
 summary(best_RASEbetar)
+
+# Plot the model
+# Extract coefficients for the 'mu' (mean) model
+coef_mu <- summary(RASE_competative_betar)$coefficients$mu
+fixed_effects <- data.frame(
+  Term = rownames(coef_mu),
+  Estimate = coef_mu[, "Estimate"],
+  SE = coef_mu[, "Std. Error"],
+  p_value = coef_mu[, "Pr(>|z|)"]
+)
+
+# Remove the intercept term from the data
+fixed_effects <- fixed_effects[fixed_effects$Term != "(Intercept)", ]
+
+# Add significance markers based on p-values
+fixed_effects$Significance <- case_when(
+  fixed_effects$p_value < 0.001 ~ "***",
+  fixed_effects$p_value < 0.01  ~ "**",
+  fixed_effects$p_value < 0.05  ~ "*",
+  TRUE ~ ""
+)
+
+# Plot with ggplot2
+library(ggplot2)
+ggplot(fixed_effects, aes(x = Term, y = Estimate, ymin = Estimate - 1.96 * SE, ymax = Estimate + 1.96 * SE)) +
+  geom_pointrange() +
+  geom_hline(yintercept = 0, linetype = "solid", size = 1.2, color = "black") +  # Add thick line at 0
+  geom_text(aes(label = Significance), vjust = -1, size = 5) +  # Add significance asterisks
+  coord_flip() +  # To flip the x-axis for better readability
+  theme_minimal() +
+  labs(title = "Fixed Effects from Beta Regression", y = "Estimate") +
+  theme(axis.text.x = element_text(size = 10))
+

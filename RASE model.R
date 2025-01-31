@@ -173,10 +173,12 @@ Big_data$ungulate_index <- (
 # Select the most relevant ecological variables for RASE per ha. (AntalRASEHa) and 
 # % RASE at competative height (RASEAndelGynnsam)
 RASE_data <- Big_data %>%
-  dplyr::select(AntalRASEHa, RASEAndelGynnsam, Älgtäthet.i.vinterstam, Roe1000, FD1000, Red1000, WB1000, ungulate_index,
-                AntalGranarHa, AntalTallarHa, AntalBjorkarHa, AndelBordigaMarker, youngforest_area_ha, proportion_young_forest,
-                `Mean_seasonal_temp[c]_imputed`, `Mean_seasonal_precipitation[mm]_imputed`, `mean_seasonal_snowdepth[cm]_imputed`,
-                prop_snow_20_plus, BestHojdAllaAVG, BestandAlder, InvAr, Registreri)
+  dplyr::select(AntalRASEHa, RASEAndelGynnsam, # Independent variables 
+                Älgtäthet.i.vinterstam, Roe1000, FD1000, Red1000, WB1000, ungulate_index, # Browsers
+                youngforest_area_ha, proportion_young_forest, AndelBordigaMarker, BestHojdAllaAVG, BestandAlder, # Site
+                AntalGranarHa, AntalTallarHa, AntalBjorkarHa, # Competitor species
+                `Mean_seasonal_temp[c]_imputed`, `Mean_seasonal_precipitation[mm]_imputed`, `mean_seasonal_snowdepth[cm]_imputed`, # Climate
+                InvAr, Registreri) # Random effects
 
 # Take data form 2018 onwwards when RASE per ha. (AntalRASEHa) is actually measureed
 RASE_data_18_23 <- RASE_data %>%
@@ -190,7 +192,7 @@ RASE_data_NA <- na.omit(RASE_data_18_23)
 
 # Check for potential co-linearity
 # Calculate correlation matrix
-cor_matrix <- cor(RASE_data_NA[, c("Älgtäthet.i.vinterstam", "ungulate_index", "WB1000", # Browsers
+cor_matrix <- cor(RASE_data_NA[, c("Älgtäthet.i.vinterstam", "ungulate_index", "WB1000", "Roe1000", "FD1000", "Red1000", "WB1000", # Browsers
                                         "BestHojdAllaAVG", "BestandAlder", "AndelBordigaMarker", "youngforest_area_ha", "proportion_young_forest", # Site
                                         "AntalGranarHa", "AntalTallarHa", "AntalBjorkarHa", # Competitor species
                                         "Mean_seasonal_temp[c]_imputed", "Mean_seasonal_precipitation[mm]_imputed","mean_seasonal_snowdepth[cm]_imputed")], # Climate
@@ -203,32 +205,40 @@ filtered_cor[abs(filtered_cor) <= 0.7 | abs(filtered_cor) == 1] <- NA
 # View the filtered correlation matrix
 filtered_cor
 
+# Select the cliamte variables with heighest AIC
+# Individual climate models
+glm_RASE_Ha_temp <- glmer(AntalRASEHa ~ scale(`Mean_seasonal_temp[c]_imputed`) + (1 | InvAr) + (1 | Registreri), family = poisson, data = RASE_data_NA)
+glm_RASE_Ha_precip <- glmer(AntalRASEHa ~ scale(`Mean_seasonal_precipitation[mm]_imputed`) + (1 | InvAr) + (1 | Registreri), family = poisson, data = RASE_data_NA)
+glm_RASE_Ha_snow <- glmer(AntalRASEHa ~ scale(`mean_seasonal_snowdepth[cm]_imputed`) + (1 | InvAr) + (1 | Registreri), family = poisson, data = RASE_data_NA)
+
+# Compare Models Using AIC
+AIC(glm_RASE_Ha_temp, glm_RASE_Ha_precip, glm_RASE_Ha_snow)
+
 ## RASE per hectare ####
 library(lme4)
 library(betareg)
 library(MuMIn)
 library(sjPlot)
 
-RASE_Ha_glm <- glmer(AntalRASEHa ~ scale(Älgtäthet.i.vinterstam) + scale(ungulate_index) + scale(WB1000) + # Browsers
-                          scale(AntalTallarHa) + scale(AntalBjorkarHa) + # Other trees
-                          scale(proportion_young_forest) +  scale(BestandAlder) + scale(AndelBordigaMarker) + # Forest
-                          scale(`mean_seasonal_snowdepth[cm]_imputed`) + # Climate
-                          (1 | InvAr) + (1 | Registreri), # Random effects
-                        family = poisson, data = RASE_data_NA)
+glm_RASE_Ha <- glmer(AntalRASEHa ~ scale(Älgtäthet.i.vinterstam) + scale(FD1000) + scale(WB1000) +  
+                       scale(AntalTallarHa) + scale(AntalBjorkarHa) + 
+                       scale(proportion_young_forest) + scale(AndelBordigaMarker) + scale(youngforest_area_ha) + 
+                       scale(`mean_seasonal_snowdepth[cm]_imputed`) + scale(`Mean_seasonal_precipitation[mm]_imputed`)+
+                       (1 | InvAr) + (1 | Registreri), family = poisson, data = RASE_data_NA)
 
-summary(RASE_Ha_glm)
+summary(glm_RASE_Ha)
 
 # Run model selection 
 options(na.action = "na.fail")  # Prevent `dredge` from failing silently due to missing data
-dredged_RASEglm <- dredge(RASE_Ha_glm)
-summary(dredged_RASEglm)
+dredged_glm_RASE <- dredge(glm_RASE_Ha)
+summary(dredged_glm_RASE)
 
 # Get the best model (rank 1)
-best_RASEglm <- get.models(dredged_RASEglm, subset = 1)[[1]]
-summary(best_RASEglm)
+best_glm_RASE <- get.models(dredged_glm_RASE, subset = 1)[[1]]
+summary(best_glm_RASE)
 
 # Plot fixed effects from the GLMM
-plot_model(best_RASEglm, type = "est", show.values = TRUE, show.p = TRUE)
+plot_model(best_glm_RASE, type = "est", show.values = TRUE, show.p = TRUE)
 
 ## RASE at competitive height ####
 library(betareg)

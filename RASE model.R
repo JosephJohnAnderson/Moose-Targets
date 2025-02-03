@@ -169,6 +169,7 @@ Big_data$ungulate_index <- (
 )
 
 ## Model data selection model with big data ####
+library(lme4)
 
 # Select the most relevant ecological variables for RASE per ha. (AntalRASEHa) and 
 # % RASE at competative height (RASEAndelGynnsam)
@@ -177,37 +178,12 @@ RASE_data <- Big_data %>%
                 Älgtäthet.i.vinterstam, Roe1000, FD1000, Red1000, WB1000, ungulate_index, # Browsers
                 youngforest_area_ha, proportion_young_forest, AndelBordigaMarker, BestHojdAllaAVG, BestandAlder, # Site
                 AntalGranarHa, AntalTallarHa, AntalBjorkarHa, # Competitor species
-                `Mean_seasonal_temp[c]_imputed`, `Mean_seasonal_precipitation[mm]_imputed`, `mean_seasonal_snowdepth[cm]_imputed`, # Climate
+                `Mean_seasonal_temp[c]`, `Mean_seasonal_precipitation[mm]`, `mean_seasonal_snowdepth[cm]`, # Climate
                 InvAr, Registreri) # Random effects
-
-# Rename variables for plotting later
-dplyr::rename(
-  Moose_density= Älgtäthet.i.vinterstam,
-  Roe_deer_density= Roe1000,
-  Fallow_deer_density = FD1000,
-  Red_deer_density = Red1000,
-  Wild_boar_density = WB1000,
-  Ungulate_index = ungulate_index,
-  Young_forest_Ha = youngforest_area_ha,
-  Proportion_young_forest = proportion_young_forest,
-  Propotion_on_fertile_soils = AndelBordigaMarker,
-  AvgHeight = BestHojdAllaAVG,
-  StandAge = BestandAlder,
-  PineDensity = AntalGranarHa,
-  SpruceDensity = AntalTallarHa,
-  BirchDensity = AntalBjorkarHa,
-  MeanTemp = `Mean_seasonal_temp[c]_imputed`,
-  MeanPrecip = `Mean_seasonal_precipitation[mm]_imputed`,
-  MeanSnowDepth = `mean_seasonal_snowdepth[cm]_imputed`
-)
-
-# View the first few rows to check the selection and renaming
-head(RASE_data)
-
 
 # Take data form 2018 onwwards when RASE per ha. (AntalRASEHa) is actually measureed
 RASE_data_18_23 <- RASE_data %>%
-  filter(InvAr %in% c(2018, 2019, 2020, 2021))
+  filter(InvAr %in% c(2018, 2019, 2020, 2021, 2022, 2023))
 
 # See which variables have most NA and consider removing them
 sort(colSums(is.na(RASE_data_18_23)), decreasing = TRUE)
@@ -220,7 +196,7 @@ RASE_data_NA <- na.omit(RASE_data_18_23)
 cor_matrix <- cor(RASE_data_NA[, c("Älgtäthet.i.vinterstam", "ungulate_index", "WB1000", "Roe1000", "FD1000", "Red1000", "WB1000", # Browsers
                                         "BestHojdAllaAVG", "BestandAlder", "AndelBordigaMarker", "youngforest_area_ha", "proportion_young_forest", # Site
                                         "AntalGranarHa", "AntalTallarHa", "AntalBjorkarHa", # Competitor species
-                                        "Mean_seasonal_temp[c]_imputed", "Mean_seasonal_precipitation[mm]_imputed","mean_seasonal_snowdepth[cm]_imputed")], # Climate
+                                        "Mean_seasonal_temp[c]", "Mean_seasonal_precipitation[mm]","mean_seasonal_snowdepth[cm]")], # Climate
                                     method = "pearson", use = "pairwise.complete.obs")
 
 # Filter correlations greater than 0.7 or less than -0.7, excluding 1
@@ -232,9 +208,9 @@ filtered_cor
 
 # Select the cliamte variables with heighest AIC
 # Individual climate models
-glm_RASE_Ha_temp <- glmer(AntalRASEHa ~ scale(`Mean_seasonal_temp[c]_imputed`) + (1 | InvAr) + (1 | Registreri), family = poisson, data = RASE_data_NA)
-glm_RASE_Ha_precip <- glmer(AntalRASEHa ~ scale(`Mean_seasonal_precipitation[mm]_imputed`) + (1 | InvAr) + (1 | Registreri), family = poisson, data = RASE_data_NA)
-glm_RASE_Ha_snow <- glmer(AntalRASEHa ~ scale(`mean_seasonal_snowdepth[cm]_imputed`) + (1 | InvAr) + (1 | Registreri), family = poisson, data = RASE_data_NA)
+glm_RASE_Ha_temp <- glmer.nb(AntalRASEHa ~ scale(`Mean_seasonal_temp[c]`) + (1 | InvAr) + (1 | Registreri), data = RASE_data_NA)
+glm_RASE_Ha_precip <- glmer.nb(AntalRASEHa ~ scale(`Mean_seasonal_precipitation[mm]`) + (1 | InvAr) + (1 | Registreri), data = RASE_data_NA)
+glm_RASE_Ha_snow <- glmer.nb(AntalRASEHa ~ scale(`mean_seasonal_snowdepth[cm]`) + (1 | InvAr) + (1 | Registreri), data = RASE_data_NA)
 
 # Compare Models Using AIC
 AIC(glm_RASE_Ha_temp, glm_RASE_Ha_precip, glm_RASE_Ha_snow)
@@ -243,18 +219,26 @@ AIC(glm_RASE_Ha_temp, glm_RASE_Ha_precip, glm_RASE_Ha_snow)
 library(dplyr)
 library(lme4)
 library(MuMIn)
-library(sjPlot)
 library(ggplot2)
+library(car)
+library(DHARMa)
 
-glm_RASE_Ha <- glmer(AntalRASEHa ~ scale(Älgtäthet.i.vinterstam) + scale(FD1000) + scale(WB1000) +  
-                       scale(AntalTallarHa) + scale(AntalBjorkarHa) + 
-                       scale(proportion_young_forest) + scale(AndelBordigaMarker) + scale(youngforest_area_ha) + 
-                       scale(`mean_seasonal_snowdepth[cm]_imputed`) + scale(`Mean_seasonal_precipitation[mm]_imputed`)+
-                       (1 | InvAr) + (1 | Registreri), family = poisson, data = RASE_data_NA)
-
+glm_RASE_Ha <- glmer.nb(AntalRASEHa ~ scale(Älgtäthet.i.vinterstam) + scale(FD1000) + scale(WB1000) +  
+                             scale(AntalTallarHa) + scale(AntalBjorkarHa) + 
+                             scale(proportion_young_forest) + scale(AndelBordigaMarker) + scale(youngforest_area_ha) + scale(BestandAlder) +
+                             scale(`mean_seasonal_snowdepth[cm]`) + scale(`Mean_seasonal_precipitation[mm]`) +
+                             (1 | Registreri) + (1 | InvAr), # Should I remove InvAr as random effect (singular)?
+                           data = RASE_data_NA)
 summary(glm_RASE_Ha)
 
-# Run model selection 
+# Check variance inflation factor (VIF)
+vif(glm_RASE_Ha)
+
+# Check for over dispersal
+glm_RASE_Ha_simres <- simulateResiduals(glm_RASE_Ha)
+testDispersion(glm_RASE_Ha_simres)
+
+# Once happy with model type and variables Run model selection 
 options(na.action = "na.fail")  # Prevent `dredge` from failing silently due to missing data
 dredged_glm_RASE <- dredge(glm_RASE_Ha)
 summary(dredged_glm_RASE)
@@ -291,7 +275,7 @@ ggplot(fixed_effects_glm, aes(x = Term, y = Estimate, ymin = Estimate - 1.96 * S
   geom_hline(yintercept = 0, linetype = "solid", size = 1.2, color = "black") +  # Add thick line at 0
   geom_text(aes(label = Significance), vjust = -1, size = 5) +  # Add significance asterisks
   coord_flip() +  # To flip the x-axis for better readability
-  theme_minimal() +
+  theme_classic() +
   labs(title = "Fixed Effects from GLMM (Poisson)", y = "Estimate") +
   theme(axis.text.x = element_text(size = 10))
 

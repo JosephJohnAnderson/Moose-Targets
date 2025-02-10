@@ -181,15 +181,15 @@ RASE_data <- Big_data %>%
                 `Mean_seasonal_temp[c]`, `Mean_seasonal_precipitation[mm]`, `mean_seasonal_snowdepth[cm]`, # Climate
                 InvAr, Registreri) # Random effects
 
-# Take data form 2018 onwwards when RASE per ha. (AntalRASEHa) is actually measureed
-RASE_data_18_23 <- RASE_data %>%
-  filter(InvAr %in% c(2018, 2019, 2020, 2021, 2022, 2023))
+# Take data form 2018 onwards when RASE per ha. (AntalRASEHa) is actually measured
+RASE_data_18_24 <- RASE_data %>%
+  filter(InvAr %in% c(2018, 2019, 2020, 2021, 2022, 2023, 2024))
 
 # See which variables have most NA and consider removing them
-sort(colSums(is.na(RASE_data_18_23)), decreasing = TRUE)
+sort(colSums(is.na(RASE_data_18_24)), decreasing = TRUE)
 
 # remove rows with NA values (need for model selection)
-RASE_data_NA <- na.omit(RASE_data_18_23)
+RASE_data_NA <- na.omit(RASE_data_18_24)
 
 # Check for potential co-linearity
 # Calculate correlation matrix
@@ -220,6 +220,7 @@ library(dplyr)
 library(lme4)
 library(MuMIn)
 library(ggplot2)
+library(ggsave)
 library(car)
 library(DHARMa)
 
@@ -227,7 +228,7 @@ glm_RASE_Ha <- glmer.nb(AntalRASEHa ~ scale(Älgtäthet.i.vinterstam) + scale(FD
                              scale(AntalTallarHa) + scale(AntalBjorkarHa) + 
                              scale(proportion_young_forest) + scale(AndelBordigaMarker) + scale(youngforest_area_ha) + scale(BestandAlder) +
                              scale(`mean_seasonal_snowdepth[cm]`) + scale(`Mean_seasonal_precipitation[mm]`) +
-                             (1 | Registreri) + (1 | InvAr), # Should I remove InvAr as random effect (singular)?
+                             (1 | Registreri) + (1 | InvAr), # Should I remove InvAr as random effect (is singular)?
                            data = RASE_data_NA)
 summary(glm_RASE_Ha)
 
@@ -269,26 +270,51 @@ fixed_effects_glm$Significance <- case_when(
   TRUE ~ ""
 )
 
+# Rename terms using recode (without !!!)
+fixed_effects_glm$Term <- dplyr::recode(fixed_effects_glm$Term,
+                                        "scale(Älgtäthet.i.vinterstam)" = "Moose Density",        
+                                        "scale(FD1000)" = "Fallow Deer Density",
+                                        "scale(WB1000)" = "Wild Boar Density",
+                                        "scale(AntalTallarHa)" = "Number of Pine Trees per Ha",
+                                        "scale(AntalBjorkarHa)" = "Number of Birch Trees per Ha",
+                                        "scale(proportion_young_forest)" = "Proportion of Young Forest",
+                                        "scale(AndelBordigaMarker)" = "Proportion on Productive Land",
+                                        "scale(youngforest_area_ha)" = "Young Forest Area (Ha)",
+                                        "scale(BestandAlder)" = "Stand Age",
+                                        "scale(`mean_seasonal_snowdepth[cm]`)" = "Mean Seasonal Snow Depth", 
+                                        "scale(`Mean_seasonal_precipitation[mm]`)" = "Mean Seasonal Precipitation"
+)
+
+
 # Plot with ggplot2
-ggplot(fixed_effects_glm, aes(x = Term, y = Estimate, ymin = Estimate - 1.96 * SE, ymax = Estimate + 1.96 * SE)) +
-  geom_pointrange() +
-  geom_hline(yintercept = 0, linetype = "solid", size = 1.2, color = "black") +  # Add thick line at 0
-  geom_text(aes(label = Significance), vjust = -1, size = 5) +  # Add significance asterisks
-  coord_flip() +  # To flip the x-axis for better readability
-  theme_classic() +
-  labs(title = "Fixed Effects from GLMM (Poisson)", y = "Estimate") +
-  theme(axis.text.x = element_text(size = 10))
+RASE_Ha_plot <- ggplot(fixed_effects_glm, aes(x = Term, y = Estimate, ymin = Estimate - 1.96 * SE, ymax = Estimate + 1.96 * SE)) +
+                geom_pointrange() +
+                geom_hline(yintercept = 0, linetype = "solid", size = 1.2, color = "black") +  # Add thick line at 0
+                geom_text(aes(label = Significance), vjust = -1, size = 5) +  # Add significance asterisks
+                coord_flip() +  # To flip the x-axis for better readability
+                theme_classic() +
+                labs(title = "Fixed Effects on RASE per Ha.", y = "Estimate") +
+                theme(axis.text.x = element_text(size = 10))
+
+RASE_Ha_plot
+
+# Export with ggsave 
+ggsave("RASE_Ha_plot.tiff", plot = RASE_Ha_plot, device = NULL, 
+       path = "~/GitHub/Moose-Targets/Plots", scale = 1, width = 14, 
+       height = 14, dpi = 300, limitsize = TRUE, units = "cm")
+
 
 ## RASE at competitive height ####
 library(dplyr)
 library(betareg)
 library(MuMIn)
 library(ggplot2)
+library(ggsave)
 
 RASE_competative_betar <- betareg(RASEAndelGynnsam ~ scale(Älgtäthet.i.vinterstam) + scale(FD1000) + scale(WB1000) +  
                                     scale(AntalTallarHa) + scale(AntalBjorkarHa) + 
-                                    scale(proportion_young_forest) + scale(AndelBordigaMarker) + scale(youngforest_area_ha) + 
-                                    scale(`mean_seasonal_snowdepth[cm]_imputed`) + scale(`Mean_seasonal_precipitation[mm]_imputed`), 
+                                    scale(proportion_young_forest) + scale(AndelBordigaMarker) + scale(youngforest_area_ha) + scale(BestandAlder) +
+                                    scale(`mean_seasonal_snowdepth[cm]`) + scale(`Mean_seasonal_precipitation[mm]`), 
                                   data = Big_data, na.action = na.exclude)
 
 summary(RASE_competative_betar)
@@ -305,35 +331,56 @@ summary(dredged_RASEbetar)
 best_RASEbetar <- get.models(dredged_RASEbetar, subset = 1)[[1]]
 summary(best_RASEbetar)
 
-# Plot the model
-# Extract coefficients for the 'mu' (mean) model
-coef_mu <- summary(RASE_competative_betar)$coefficients$mu
-fixed_effects <- data.frame(
-  Term = rownames(coef_mu),
-  Estimate = coef_mu[, "Estimate"],
-  SE = coef_mu[, "Std. Error"],
-  p_value = coef_mu[, "Pr(>|z|)"]
+# Plot fixed effects from the GLMM
+# Extract coefficients for the fixed effects
+coef_glm <- summary(glm_RASE_Ha)$coefficients
+fixed_effects_glm <- data.frame(
+  Term = rownames(coef_glm),
+  Estimate = coef_glm[, "Estimate"],
+  SE = coef_glm[, "Std. Error"],
+  z_value = coef_glm[, "z value"],
+  p_value = coef_glm[, "Pr(>|z|)"]
 )
 
 # Remove the intercept term from the data
-fixed_effects <- fixed_effects[fixed_effects$Term != "(Intercept)", ]
+fixed_effects_glm <- fixed_effects_glm[fixed_effects_glm$Term != "(Intercept)", ]
 
 # Add significance markers based on p-values
-fixed_effects$Significance <- case_when(
-  fixed_effects$p_value < 0.001 ~ "***",
-  fixed_effects$p_value < 0.01  ~ "**",
-  fixed_effects$p_value < 0.05  ~ "*",
+fixed_effects_glm$Significance <- case_when(
+  fixed_effects_glm$p_value < 0.001 ~ "***",
+  fixed_effects_glm$p_value < 0.01  ~ "**",
+  fixed_effects_glm$p_value < 0.05  ~ "*",
   TRUE ~ ""
 )
 
+# Rename terms using recode (without !!!)
+fixed_effects_glm$Term <- dplyr::recode(fixed_effects_glm$Term,
+                                        "scale(Älgtäthet.i.vinterstam)" = "Moose Density",        
+                                        "scale(FD1000)" = "Fallow Deer Density",
+                                        "scale(WB1000)" = "Wild Boar Density",
+                                        "scale(AntalTallarHa)" = "Number of Pine Trees per Ha",
+                                        "scale(AntalBjorkarHa)" = "Number of Birch Trees per Ha",
+                                        "scale(proportion_young_forest)" = "Proportion of Young Forest",
+                                        "scale(AndelBordigaMarker)" = "Proportion on Productive Land",
+                                        "scale(youngforest_area_ha)" = "Young Forest Area (Ha)",
+                                        "scale(BestandAlder)" = "Stand Age",
+                                        "scale(`mean_seasonal_snowdepth[cm]`)" = "Mean Seasonal Snow Depth", 
+                                        "scale(`Mean_seasonal_precipitation[mm]`)" = "Mean Seasonal Precipitation"
+)
+
 # Plot with ggplot2
-library(ggplot2)
-ggplot(fixed_effects, aes(x = Term, y = Estimate, ymin = Estimate - 1.96 * SE, ymax = Estimate + 1.96 * SE)) +
+RASE_Ha_plot <- ggplot(fixed_effects_glm, aes(x = Term, y = Estimate, ymin = Estimate - 1.96 * SE, ymax = Estimate + 1.96 * SE)) +
   geom_pointrange() +
   geom_hline(yintercept = 0, linetype = "solid", size = 1.2, color = "black") +  # Add thick line at 0
   geom_text(aes(label = Significance), vjust = -1, size = 5) +  # Add significance asterisks
   coord_flip() +  # To flip the x-axis for better readability
-  theme_minimal() +
-  labs(title = "Fixed Effects from Beta Regression", y = "Estimate") +
+  theme_classic() +
+  labs(title = "Fixed Effects on competative RASE", y = "Estimate") +
   theme(axis.text.x = element_text(size = 10))
 
+RASE_Ha_plot
+
+# Export with ggsave 
+ggsave("RASE_Gyn_plot.tiff", plot = RASE_Ha_plot, device = NULL, 
+       path = "~/GitHub/Moose-Targets/Plots", scale = 1, width = 14, 
+       height = 14, dpi = 300, limitsize = TRUE, units = "cm")

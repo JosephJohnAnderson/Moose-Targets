@@ -177,6 +177,7 @@ RASE_data <- Big_data %>%
   dplyr::select(AntalRASEHa, RASEAndelGynnsam, # Independent variables 
                 Älgtäthet.i.vinterstam, Roe1000, FD1000, Red1000, WB1000, ungulate_index, # Browsers
                 youngforest_area_ha, proportion_young_forest, AndelBordigaMarker, BestHojdAllaAVG, BestandAlder, # Site
+                Medelbestandshojd, AndelRojt...18, # Site
                 AntalGranarHa, AntalTallarHa, AntalBjorkarHa, # Competitor species
                 `Mean_seasonal_temp[c]`, `Mean_seasonal_precipitation[mm]`, `mean_seasonal_snowdepth[cm]`, # Climate
                 InvAr, Registreri) # Random effects
@@ -194,7 +195,8 @@ RASE_data_NA <- na.omit(RASE_data_18_24)
 # Check for potential co-linearity
 # Calculate correlation matrix
 cor_matrix <- cor(RASE_data_NA[, c("Älgtäthet.i.vinterstam", "ungulate_index", "WB1000", "Roe1000", "FD1000", "Red1000", "WB1000", # Browsers
-                                        "BestHojdAllaAVG", "BestandAlder", "AndelBordigaMarker", "youngforest_area_ha", "proportion_young_forest", # Site
+                                        "BestHojdAllaAVG", "BestandAlder", "Medelbestandshojd", "AndelRojt...18", # Site
+                                        "AndelBordigaMarker", "youngforest_area_ha", "proportion_young_forest", # Site
                                         "AntalGranarHa", "AntalTallarHa", "AntalBjorkarHa", # Competitor species
                                         "Mean_seasonal_temp[c]", "Mean_seasonal_precipitation[mm]","mean_seasonal_snowdepth[cm]")], # Climate
                                     method = "pearson", use = "pairwise.complete.obs")
@@ -225,7 +227,8 @@ library(DHARMa)
 
 glm_RASE_Ha <- glmer.nb(AntalRASEHa ~ scale(Älgtäthet.i.vinterstam) + scale(FD1000) + scale(WB1000) +  
                              scale(AntalTallarHa) + scale(AntalBjorkarHa) + 
-                             scale(proportion_young_forest) + scale(AndelBordigaMarker) + scale(youngforest_area_ha) + scale(BestandAlder) +
+                             scale(proportion_young_forest) + scale(AndelBordigaMarker) + scale(youngforest_area_ha) +
+                             scale(Medelbestandshojd) + scale(AndelRojt...18) + scale(BestandAlder) +
                              scale(`mean_seasonal_snowdepth[cm]`) + scale(`Mean_seasonal_precipitation[mm]`) +
                              (1 | Registreri) + (1 | InvAr), # Should I remove InvAr as random effect (is singular)?
                            data = RASE_data_NA)
@@ -249,7 +252,7 @@ summary(best_glm_RASE)
 
 # Plot fixed effects from the GLMM
 # Extract coefficients for the fixed effects
-coef_glm <- summary(glm_RASE_Ha)$coefficients
+coef_glm <- summary(best_glm_RASE)$coefficients
 fixed_effects_glm <- data.frame(
   Term = rownames(coef_glm),
   Estimate = coef_glm[, "Estimate"],
@@ -280,6 +283,8 @@ fixed_effects_glm$Term <- dplyr::recode(fixed_effects_glm$Term,
                                         "scale(AndelBordigaMarker)" = "Proportion on Productive Land",
                                         "scale(youngforest_area_ha)" = "Young Forest Area (Ha)",
                                         "scale(BestandAlder)" = "Stand Age",
+                                        "scale(Medelbestandshojd)" = "Average stand height",
+                                        "scale(AndelRojt...18)" = "Proportion PCT",
                                         "scale(`mean_seasonal_snowdepth[cm]`)" = "Mean Seasonal Snow Depth", 
                                         "scale(`Mean_seasonal_precipitation[mm]`)" = "Mean Seasonal Precipitation"
 )

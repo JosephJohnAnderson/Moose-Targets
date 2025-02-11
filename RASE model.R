@@ -220,7 +220,6 @@ library(dplyr)
 library(lme4)
 library(MuMIn)
 library(ggplot2)
-library(ggsave)
 library(car)
 library(DHARMa)
 
@@ -306,21 +305,19 @@ ggsave("RASE_Ha_plot.tiff", plot = RASE_Ha_plot, device = NULL,
 
 ## RASE at competitive height ####
 library(dplyr)
-library(betareg)
+library(glmmTMB)
 library(MuMIn)
 library(ggplot2)
-library(ggsave)
+library(sjPlot)
 
-RASE_competative_betar <- betareg(RASEAndelGynnsam ~ scale(Älgtäthet.i.vinterstam) + scale(FD1000) + scale(WB1000) +  
+RASE_competative_betar <- glmmTMB(RASEAndelGynnsam ~ scale(Älgtäthet.i.vinterstam) + scale(FD1000) + scale(WB1000) +  
                                     scale(AntalTallarHa) + scale(AntalBjorkarHa) + 
                                     scale(proportion_young_forest) + scale(AndelBordigaMarker) + scale(youngforest_area_ha) + scale(BestandAlder) +
-                                    scale(`mean_seasonal_snowdepth[cm]`) + scale(`Mean_seasonal_precipitation[mm]`), 
-                                  data = Big_data, na.action = na.exclude)
+                                    scale(`mean_seasonal_snowdepth[cm]`) + scale(`Mean_seasonal_precipitation[mm]`) +
+                                    (1 | Registreri) + (1 | InvAr), 
+                                  data = RASE_data_NA)
 
 summary(RASE_competative_betar)
-
-# Plot fixed effects from the GLMM
-plot_model(RASE_competative_betar, type = "est", show.values = TRUE, show.p = TRUE)
 
 # Run model selection 
 options(na.action = "na.fail")  # Prevent `dredge` from failing silently due to missing data
@@ -331,9 +328,12 @@ summary(dredged_RASEbetar)
 best_RASEbetar <- get.models(dredged_RASEbetar, subset = 1)[[1]]
 summary(best_RASEbetar)
 
+plot_model(RASE_competative_betar, type = "est", show.values = TRUE, show.p = TRUE)
+
+
 # Plot fixed effects from the GLMM
 # Extract coefficients for the fixed effects
-coef_glm <- summary(glm_RASE_Ha)$coefficients
+coef_glm <- summary(best_RASEbetar)$coefficients$cond
 fixed_effects_glm <- data.frame(
   Term = rownames(coef_glm),
   Estimate = coef_glm[, "Estimate"],
@@ -369,7 +369,7 @@ fixed_effects_glm$Term <- dplyr::recode(fixed_effects_glm$Term,
 )
 
 # Plot with ggplot2
-RASE_Ha_plot <- ggplot(fixed_effects_glm, aes(x = Term, y = Estimate, ymin = Estimate - 1.96 * SE, ymax = Estimate + 1.96 * SE)) +
+RASE_Gyn_plot <- ggplot(fixed_effects_glm, aes(x = Term, y = Estimate, ymin = Estimate - 1.96 * SE, ymax = Estimate + 1.96 * SE)) +
   geom_pointrange() +
   geom_hline(yintercept = 0, linetype = "solid", size = 1.2, color = "black") +  # Add thick line at 0
   geom_text(aes(label = Significance), vjust = -1, size = 5) +  # Add significance asterisks
@@ -378,9 +378,9 @@ RASE_Ha_plot <- ggplot(fixed_effects_glm, aes(x = Term, y = Estimate, ymin = Est
   labs(title = "Fixed Effects on competative RASE", y = "Estimate") +
   theme(axis.text.x = element_text(size = 10))
 
-RASE_Ha_plot
+RASE_Gyn_plot
 
 # Export with ggsave 
-ggsave("RASE_Gyn_plot.tiff", plot = RASE_Ha_plot, device = NULL, 
+ggsave("RASE_Gyn_plot_dredge.tiff", plot = RASE_Gyn_plot, device = NULL, 
        path = "~/GitHub/Moose-Targets/Plots", scale = 1, width = 14, 
        height = 14, dpi = 300, limitsize = TRUE, units = "cm")

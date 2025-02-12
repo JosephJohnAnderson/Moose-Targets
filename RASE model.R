@@ -10,8 +10,12 @@ library(stringr)
 SKS_ABIN <- read.xlsx("//storage-um.slu.se/restricted$/vfm/Vilt-Skog/Moose-Targets/SKS/SKS_ABIN.xlsx", 
                       sheet = "Data")
 
-# ABIN data
+# Young forest data
 Young_forest <- read.csv("//storage-um.slu.se/restricted$/vfm/Vilt-Skog/Moose-Targets/SKS/YoungForest_prop_results.csv")
+
+    # Mutate Young_forest "moose_area_id" column
+      Young_forest <- Young_forest %>%
+      mutate(Registreri = str_sub(`moose_area_id`))
 
 # SMHI data
 Weather <- read.xlsx("//storage-um.slu.se/restricted$/vfm/Vilt-Skog/Moose-Targets/SMHI/MMA_full_weather_data_with_imputed_NAs_21_01_2025.xlsx")
@@ -128,7 +132,7 @@ Calf_weights <- read.csv("//storage-um.slu.se/restricted$/vfm/Vilt-Skog/Moose-Ta
 Big_data <- Weather %>%
   left_join(Young_forest, by = c("Registreri" = "moose_area_id", "InvAr" = "year"))      
       
-# Add weather data to big data set
+# Add ÄBIN data to big data set
 Big_data <- Big_data %>%
   left_join(SKS_ABIN, by = c("Registreri", "InvAr"))
       
@@ -174,7 +178,8 @@ library(lme4)
 # Select the most relevant ecological variables for RASE per ha. (AntalRASEHa) and 
 # % RASE at competative height (RASEAndelGynnsam)
 RASE_data <- Big_data %>%
-  dplyr::select(AntalRASEHa, RASEAndelGynnsam, # Independent variables 
+  dplyr::select(LandsdelNamn,LanNamn, # Regional data
+                AntalRASEHa, RASEAndelGynnsam, # Independent variables 
                 Älgtäthet.i.vinterstam, Roe1000, FD1000, Red1000, WB1000, ungulate_index, # Browsers
                 youngforest_area_ha, proportion_young_forest, AndelBordigaMarker, BestHojdAllaAVG, BestandAlder, # Site
                 Medelbestandshojd, AndelRojt...18, # Site
@@ -217,7 +222,14 @@ glm_RASE_Ha_snow <- glmer.nb(AntalRASEHa ~ scale(`mean_seasonal_snowdepth[cm]`) 
 # Compare Models Using AIC
 AIC(glm_RASE_Ha_temp, glm_RASE_Ha_precip, glm_RASE_Ha_snow)
 
-## RASE per hectare ####
+# Individual height model
+glm_RASE_Ha_MBH <- glmer.nb(AntalRASEHa ~ scale(Medelbestandshojd) + (1 | InvAr) + (1 | Registreri), data = RASE_data_NA)
+glm_RASE_Ha_BHAA <- glmer.nb(AntalRASEHa ~ scale(BestHojdAllaAVG) + (1 | InvAr) + (1 | Registreri), data = RASE_data_NA)
+
+# Compare Models Using AIC
+AIC(glm_RASE_Ha_MBH, glm_RASE_Ha_BHAA)
+
+## RASE per hectare national ####
 library(dplyr)
 library(lme4)
 library(MuMIn)
@@ -232,6 +244,7 @@ glm_RASE_Ha <- glmer.nb(AntalRASEHa ~ scale(Älgtäthet.i.vinterstam) + scale(FD
                              scale(`mean_seasonal_snowdepth[cm]`) + scale(`Mean_seasonal_precipitation[mm]`) +
                              (1 | Registreri) + (1 | InvAr), # Should I remove InvAr as random effect (is singular)?
                            data = RASE_data_NA)
+
 summary(glm_RASE_Ha)
 
 # Check variance inflation factor (VIF)
@@ -245,6 +258,10 @@ testDispersion(glm_RASE_Ha_simres)
 options(na.action = "na.fail")  # Prevent `dredge` from failing silently due to missing data
 dredged_glm_RASE <- dredge(glm_RASE_Ha)
 summary(dredged_glm_RASE)
+
+# Select models within ΔAIC < 2 of the best model
+top_GLM_RASE <- subset(dredged_glm_RASE, delta < 2)
+summary(top_GLM_RASE)
 
 # Get the best model (rank 1)
 best_glm_RASE <- get.models(dredged_glm_RASE, subset = 1)[[1]]
@@ -308,7 +325,74 @@ ggsave("RASE_Ha_plot.tiff", plot = RASE_Ha_plot, device = NULL,
        height = 14, dpi = 300, limitsize = TRUE, units = "cm")
 
 
-## RASE at competitive height ####
+## RASE per hectare regions ####
+
+# Take RASE_data_NA and filter for regions
+
+## Norrland
+RASE_data_Norrland <- RASE_data_NA %>%
+  filter(LandsdelNamn %in% c("Södra Norrland", "Norra Norrland"))
+
+# Run the model
+glm_RASE_Ha_N <- glmer.nb(AntalRASEHa ~ scale(Älgtäthet.i.vinterstam) + scale(WB1000) +  
+                          scale(AntalTallarHa) + scale(AntalBjorkarHa) + 
+                          scale(proportion_young_forest) + scale(AndelBordigaMarker) + scale(youngforest_area_ha) +
+                          scale(Medelbestandshojd) + scale(AndelRojt...18) + scale(BestandAlder) +
+                          scale(`mean_seasonal_snowdepth[cm]`) + scale(`Mean_seasonal_precipitation[mm]`) +
+                          (1 | Registreri) + (1 | InvAr), # is singular?
+                        data = RASE_data_Norrland)
+
+summary(glm_RASE_Ha_N)
+
+# Check variance inflation factor (VIF)
+vif(glm_RASE_Ha_N)
+
+# Check for over dispersal
+glm_RASE_Ha_N_simres <- simulateResiduals(glm_RASE_Ha_N)
+testDispersion(glm_RASE_Ha_N_simres)
+
+# Once happy with model type and variables Run model selection 
+options(na.action = "na.fail")  # Prevent `dredge` from failing silently due to missing data
+dredged_glm_RASE_ha_N <- dredge(glm_RASE_Ha_N)
+summary(dredged_glm_RASE)
+
+# Select models within ΔAIC < 2 of the best model
+top_GLM_RASE <- subset(dredged_glm_RASE, delta < 2)
+summary(top_GLM_RASE)
+
+# Get the best model (rank 1)
+best_glm_RASE <- get.models(dredged_glm_RASE, subset = 1)[[1]]
+summary(best_glm_RASE)
+
+## Svealand
+RASE_data_Svealand <- RASE_data_NA %>%
+  filter(LandsdelNamn %in% c("Svealand"))
+
+glm_RASE_Ha_S <- glmer.nb(AntalRASEHa ~ scale(Älgtäthet.i.vinterstam) + scale(FD1000) + scale(WB1000) + scale(Roe1000) +
+                            scale(AntalTallarHa) + scale(AntalBjorkarHa) + 
+                            scale(proportion_young_forest) + scale(AndelBordigaMarker) + scale(youngforest_area_ha) +
+                            scale(Medelbestandshojd) + scale(AndelRojt...18) + scale(BestandAlder) +
+                            scale(`Mean_seasonal_precipitation[mm]`) +
+                            (1 | Registreri) + (1 | InvAr), # is singular?
+                          data = RASE_data_Svealand)
+
+summary(glm_RASE_Ha_S)
+
+## Götaland
+RASE_data_Gotaland <- RASE_data_NA %>%
+  filter(LandsdelNamn %in% c("Götaland"))
+
+glm_RASE_Ha_G <- glmer.nb(AntalRASEHa ~ scale(Älgtäthet.i.vinterstam) + scale(FD1000) + scale(WB1000) + scale(Roe1000) + 
+                            scale(AntalTallarHa) + scale(AntalBjorkarHa) + 
+                            scale(proportion_young_forest) + scale(AndelBordigaMarker) + scale(youngforest_area_ha) +
+                            scale(Medelbestandshojd) + scale(AndelRojt...18) + scale(BestandAlder) +
+                            scale(`Mean_seasonal_precipitation[mm]`) +
+                            (1 | Registreri) + (1 | InvAr), # is singular?
+                          data = RASE_data_Gotaland)
+
+summary(glm_RASE_Ha_G)
+
+## RASE at competitive height national ####
 library(dplyr)
 library(glmmTMB)
 library(MuMIn)
@@ -389,3 +473,67 @@ RASE_Gyn_plot
 ggsave("RASE_Gyn_plot_dredge.tiff", plot = RASE_Gyn_plot, device = NULL, 
        path = "~/GitHub/Moose-Targets/Plots", scale = 1, width = 14, 
        height = 14, dpi = 300, limitsize = TRUE, units = "cm")
+
+## RASE at competitive height regions ####
+
+# Take RASE_data_NA and filter for regions
+
+## Norrland
+RASE_data_Norrland <- RASE_data_NA %>%
+  filter(LandsdelNamn %in% c("Södra Norrland", "Norra Norrland"))
+
+# Run the model
+RASE_competative_betar_N <- glmmTMB(RASEAndelGynnsam ~ scale(Älgtäthet.i.vinterstam) + scale(FD1000) + scale(WB1000) +  
+                                                     scale(AntalTallarHa) + scale(AntalBjorkarHa) + 
+                                                     scale(proportion_young_forest) + scale(AndelBordigaMarker) + scale(youngforest_area_ha) + scale(BestandAlder) +
+                                                     scale(`mean_seasonal_snowdepth[cm]`) + scale(`Mean_seasonal_precipitation[mm]`) +
+                                                     (1 | Registreri) + (1 | InvAr), 
+                                                   data = RASE_data_Norrland)
+
+summary(RASE_competative_betar_N)
+
+# Check variance inflation factor (VIF)
+vif(RASE_competative_betar_N)
+
+# Check for over dispersal
+glm_RASE_Ha_N_simres <- simulateResiduals(RASE_competative_betar_N)
+testDispersion(glm_RASE_Ha_N_simres)
+
+# Once happy with model type and variables Run model selection 
+options(na.action = "na.fail")  # Prevent `dredge` from failing silently due to missing data
+dredged_glm_comp_ha_N <- dredge(RASE_competative_betar_N)
+summary(dredged_glm_comp_ha_N)
+
+# Select models within ΔAIC < 2 of the best model
+top_GLM_RASE <- subset(dredged_glm_comp_ha_N, delta < 2)
+summary(top_GLM_RASE)
+
+# Get the best model (rank 1)
+best_glm_RASE <- get.models(dredged_glm_comp_ha_N, subset = 1)[[1]]
+summary(best_glm_RASE)
+
+## Svealand
+RASE_data_Svealand <- RASE_data_NA %>%
+  filter(LandsdelNamn %in% c("Svealand"))
+
+RASE_competative_betar_S <- glmmTMB(RASEAndelGynnsam ~ scale(Älgtäthet.i.vinterstam) + scale(FD1000) + scale(WB1000) +  
+                                      scale(AntalTallarHa) + scale(AntalBjorkarHa) + 
+                                      scale(proportion_young_forest) + scale(AndelBordigaMarker) + scale(youngforest_area_ha) + scale(BestandAlder) +
+                                      scale(`mean_seasonal_snowdepth[cm]`) + scale(`Mean_seasonal_precipitation[mm]`) +
+                                      (1 | Registreri) + (1 | InvAr), 
+                                    data = RASE_data_Svealand)
+
+summary(RASE_competative_betar_S)
+
+## Götaland
+RASE_data_Gotaland <- RASE_data_NA %>%
+  filter(LandsdelNamn %in% c("Götaland"))
+
+RASE_competative_betar_G <- glmmTMB(RASEAndelGynnsam ~ scale(Älgtäthet.i.vinterstam) + scale(FD1000) + scale(WB1000) +  
+                                      scale(AntalTallarHa) + scale(AntalBjorkarHa) + 
+                                      scale(proportion_young_forest) + scale(AndelBordigaMarker) + scale(youngforest_area_ha) + scale(BestandAlder) +
+                                      scale(`mean_seasonal_snowdepth[cm]`) + scale(`Mean_seasonal_precipitation[mm]`) +
+                                      (1 | Registreri) + (1 | InvAr), 
+                                    data = RASE_data_Gotaland)
+
+summary(RASE_competative_betar_G)

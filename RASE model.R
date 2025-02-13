@@ -537,3 +537,16 @@ RASE_competative_betar_G <- glmmTMB(RASEAndelGynnsam ~ scale(Älgtäthet.i.vinte
                                     data = RASE_data_Gotaland)
 
 summary(RASE_competative_betar_G)
+## Create summary table of all models ####
+library(insight) # needed for sjPlot
+library(sjPlot) # needed for tab_model for summary table of glmmTMB results
+
+tab_model(final_model_national, final_model_norrland, final_model_svealand, final_model_gotaland,
+          transform = NULL, 
+          show.ci = FALSE, 
+          show.se = TRUE, 
+          show.aic = TRUE,
+          show.stat = TRUE,
+          #show.bic = TRUE,
+          #show.icc = FALSE,
+          file = "RASE_2018_2023_table.html")

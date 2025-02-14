@@ -274,13 +274,12 @@ library(ggplot2)
 library(car)
 library(DHARMa)
 
-lm_RASE_Ha <- lm(AntalRASEHa_mean ~ scale(Älgtäthet.i.vinterstam_mean) + scale(FD1000_mean) + scale(WB1000_mean) +  
+lm_RASE_Ha <- lm(AntalRASEHa_mean ~ scale(Älgtäthet.i.vinterstam_mean) +  
                     scale(AntalTallarHa_mean) + scale(AntalBjorkarHa_mean) + 
                     scale(proportion_young_forest_mean) + scale(AndelBordigaMarker_mean) + 
                     scale(youngforest_area_ha_mean) + scale(Medelbestandshojd_mean) + 
                     scale(AndelRojt...18_mean) + scale(BestandAlder_mean) +
-                    scale(`mean_seasonal_snowdepth[cm]_mean`) + 
-                    scale(`Mean_seasonal_precipitation[mm]_mean`),
+                    scale(Mean_seasonal_temp[c]_mean),
                   data = RASE_data_last_3_point_avg)
 
 summary(lm_RASE_Ha)
@@ -369,8 +368,6 @@ RASE_Ha_plot
 ggsave("RASE_Ha_plot_last.tiff", plot = RASE_Ha_plot, path = "~/GitHub/Moose-Targets/Plots", 
        scale = 1, width = 14, height = 14, dpi = 300, units = "cm")
 
-
-
 ## RASE per hectare regions ####
 
 # Take RASE_data_NA and filter for regions
@@ -418,7 +415,7 @@ best_lm_RASE_Ha_N <- get.models(dredged_lm_RASE_Ha_N, subset = 1)[[1]]
 summary(best_lm_RASE_Ha_N)
 
 ## Svealand
-RASE_data_Svealand <- RASE_data_NA %>%
+RASE_data_Svealand <- RASE_data_last_3_point_avg %>%
   filter(LandsdelNamn %in% c("Svealand"))
 
 # Run the model
@@ -427,7 +424,7 @@ lm_RASE_Ha_S <- lm(AntalRASEHa_mean ~ scale(Älgtäthet.i.vinterstam_mean) + sca
                      scale(proportion_young_forest_mean) + scale(AndelBordigaMarker_mean) + scale(youngforest_area_ha_mean) + 
                      scale(Medelbestandshojd_mean) + scale(AndelRojt...18_mean) + scale(BestandAlder_mean) +
                      scale(`mean_seasonal_snowdepth[cm]_mean`) + scale(`Mean_seasonal_precipitation[mm]_mean`),
-                   data = RASE_data_Norrland)
+                   data = RASE_data_Svealand)
 
 
 summary(lm_RASE_Ha_S)
@@ -460,11 +457,11 @@ best_lm_RASE_Ha_S <- get.models(dredged_lm_RASE_Ha_S, subset = 1)[[1]]
 summary(best_lm_RASE_Ha_S)
 
 ## Götaland
-RASE_data_Gotaland <- RASE_data_NA %>%
-  filter(LandsdelNamn %in% c("Gotaland"))
+RASE_data_Gotaland <- RASE_data_last_3_point_avg %>%
+  filter(LandsdelNamn %in% c("Götaland"))
 
 # Run the model
-lm_RASE_Ha_N <- lm(AntalRASEHa_mean ~ scale(Älgtäthet.i.vinterstam_mean) + scale(WB1000_mean) +  
+lm_RASE_Ha_G <- lm(AntalRASEHa_mean ~ scale(Älgtäthet.i.vinterstam_mean) + scale(WB1000_mean) +  
                      scale(AntalTallarHa_mean) + scale(AntalBjorkarHa_mean) + 
                      scale(proportion_young_forest_mean) + scale(AndelBordigaMarker_mean) + scale(youngforest_area_ha_mean) + 
                      scale(Medelbestandshojd_mean) + scale(AndelRojt...18_mean) + scale(BestandAlder_mean) +

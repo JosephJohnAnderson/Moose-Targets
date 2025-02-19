@@ -279,7 +279,7 @@ lm_RASE_Ha <- lm(AntalRASEHa_mean ~ scale(Älgtäthet.i.vinterstam_mean) +
                     scale(proportion_young_forest_mean) + scale(AndelBordigaMarker_mean) + 
                     scale(youngforest_area_ha_mean) + scale(Medelbestandshojd_mean) + 
                     scale(AndelRojt...18_mean) + scale(BestandAlder_mean) +
-                    scale(Mean_seasonal_temp[c]_mean),
+                    scale(`Mean_seasonal_temp[c]_mean`),
                   data = RASE_data_last_3_point_avg)
 
 summary(lm_RASE_Ha)
@@ -407,7 +407,7 @@ dredged_lm_RASE_Ha_N <- dredge(lm_RASE_Ha_N)
 summary(dredged_lm_RASE_Ha_N)
 
 # Select models within ΔAIC < 2 of the best model
-top_LM_RASE <- subset(dredged_lm_RASE_ha_N, delta < 2)
+top_LM_RASE <- subset(dredged_lm_RASE_Ha_N, delta < 2)
 summary(top_LM_RASE)
 
 # Get the best model (rank 1)

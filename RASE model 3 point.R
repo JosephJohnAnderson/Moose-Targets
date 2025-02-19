@@ -1,3 +1,4 @@
+
 # Pre-requisites
 library(openxlsx)
 library(tidyr)
@@ -220,10 +221,10 @@ RASE_data_last_3_point_avg <- RASE_data_NA %>%
 # Check for potential co-linearity
 # Calculate correlation matrix
 cor_matrix <- cor(RASE_data_last_3_point_avg[, c("Älgtäthet.i.vinterstam_mean", "ungulate_index_mean", "WB1000_mean", "Roe1000_mean", "FD1000_mean", "Red1000_mean", "WB1000_mean", # Browsers
-                                   "BestHojdAllaAVG_mean", "BestandAlder_mean", "Medelbestandshojd_mean", "AndelRojt...18_mean", # Site
-                                   "AndelBordigaMarker_mean", "youngforest_area_ha_mean", "proportion_young_forest_mean", # Site
-                                   "AntalGranarHa_mean", "AntalTallarHa_mean", "AntalBjorkarHa_mean", # Competitor species
-                                   "Mean_seasonal_temp[c]_mean", "Mean_seasonal_precipitation[mm]_mean","mean_seasonal_snowdepth[cm]_mean")], # Climate
+                                                 "BestHojdAllaAVG_mean", "BestandAlder_mean", "Medelbestandshojd_mean", "AndelRojt...18_mean", # Site
+                                                 "AndelBordigaMarker_mean", "youngforest_area_ha_mean", "proportion_young_forest_mean", # Site
+                                                 "AntalGranarHa_mean", "AntalTallarHa_mean", "AntalBjorkarHa_mean", # Competitor species
+                                                 "Mean_seasonal_temp[c]_mean", "Mean_seasonal_precipitation[mm]_mean","mean_seasonal_snowdepth[cm]_mean")], # Climate
                   method = "pearson", use = "pairwise.complete.obs")
 
 # Filter correlations greater than 0.7 or less than -0.7, excluding 1
@@ -275,12 +276,12 @@ library(car)
 library(DHARMa)
 
 lm_RASE_Ha <- lm(AntalRASEHa_mean ~ scale(Älgtäthet.i.vinterstam_mean) +  
-                    scale(AntalTallarHa_mean) + scale(AntalBjorkarHa_mean) + 
-                    scale(proportion_young_forest_mean) + scale(AndelBordigaMarker_mean) + 
-                    scale(youngforest_area_ha_mean) + scale(Medelbestandshojd_mean) + 
-                    scale(AndelRojt...18_mean) + scale(BestandAlder_mean) +
-                    scale(`Mean_seasonal_temp[c]_mean`),
-                  data = RASE_data_last_3_point_avg)
+                   scale(AntalTallarHa_mean) + scale(AntalBjorkarHa_mean) + 
+                   scale(proportion_young_forest_mean) + scale(AndelBordigaMarker_mean) + 
+                   scale(youngforest_area_ha_mean) + scale(Medelbestandshojd_mean) + 
+                   scale(AndelRojt...18_mean) + scale(BestandAlder_mean) +
+                   scale(`Mean_seasonal_temp[c]_mean`),
+                 data = RASE_data_last_3_point_avg)
 
 summary(lm_RASE_Ha)
 
@@ -378,11 +379,11 @@ RASE_data_Norrland <- RASE_data_last_3_point_avg %>%
 
 # Run the model
 lm_RASE_Ha_N <- lm(AntalRASEHa_mean ~ scale(Älgtäthet.i.vinterstam_mean) + scale(WB1000_mean) +  
-                   scale(AntalTallarHa_mean) + scale(AntalBjorkarHa_mean) + 
-                   scale(proportion_young_forest_mean) + scale(AndelBordigaMarker_mean) + scale(youngforest_area_ha_mean) + 
-                   scale(Medelbestandshojd_mean) + scale(AndelRojt...18_mean) + scale(BestandAlder_mean) +
-                   scale(`mean_seasonal_snowdepth[cm]_mean`) + scale(`Mean_seasonal_precipitation[mm]_mean`),
-                 data = RASE_data_Norrland)
+                     scale(AntalTallarHa_mean) + scale(AntalBjorkarHa_mean) + 
+                     scale(proportion_young_forest_mean) + scale(AndelBordigaMarker_mean) + scale(youngforest_area_ha_mean) + 
+                     scale(Medelbestandshojd_mean) + scale(AndelRojt...18_mean) + scale(BestandAlder_mean) +
+                     scale(`mean_seasonal_snowdepth[cm]_mean`) + scale(`Mean_seasonal_precipitation[mm]_mean`),
+                   data = RASE_data_Norrland)
 
 
 summary(lm_RASE_Ha_N)

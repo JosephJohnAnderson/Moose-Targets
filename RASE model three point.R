@@ -1,4 +1,3 @@
-
 # Pre-requisites
 library(openxlsx)
 library(tidyr)
@@ -506,10 +505,12 @@ library(MuMIn)
 library(ggplot2)
 library(sjPlot)
 
-RASE_competative_betar <- glmmTMB(RASEAndelGynnsam ~ scale(Älgtäthet.i.vinterstam) + scale(FD1000) + scale(WB1000) +  
+RASE_competative_betar <- glmmTMB(RASEAndelGynnsam ~ scale(Älgtäthet.i.vinterstam) +  
                                     scale(AntalTallarHa) + scale(AntalBjorkarHa) + 
-                                    scale(proportion_young_forest) + scale(AndelBordigaMarker) + scale(youngforest_area_ha) + scale(BestandAlder) +
-                                    scale(`mean_seasonal_snowdepth[cm]`) + scale(`Mean_seasonal_precipitation[mm]`) +
+                                    scale(proportion_young_forest) + scale(AndelBordigaMarker) + 
+                                    scale(youngforest_area_ha) + scale(Medelbestandshojd) +
+                                    scale(AndelRojt...18) + scale(BestandAlder) +
+                                    scale(`mean_seasonal_snowdepth[cm]`) +
                                     (1 | Registreri) + (1 | InvAr), 
                                   data = RASE_data_NA)
 

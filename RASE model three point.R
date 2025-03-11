@@ -222,7 +222,7 @@ RASE_data_last_3_point_avg <- RASE_data_NA %>%
 cor_matrix <- cor(RASE_data_last_3_point_avg[, c("Älgtäthet.i.vinterstam_mean", "ungulate_index_mean", "WB1000_mean", "Roe1000_mean", "FD1000_mean", "Red1000_mean", "WB1000_mean", # Browsers
                                                  "BestHojdAllaAVG_mean", "BestandAlder_mean", "Medelbestandshojd_mean", "AndelRojt...18_mean", # Site
                                                  "AndelBordigaMarker_mean", "youngforest_area_ha_mean", "proportion_young_forest_mean", # Site
-                                                 "AntalGranarHa_mean", "AntalTallarHa_mean", "AntalBjorkarHa_mean", # Competitor species
+                                                 "AntalGranarHa_mean", "AntalTallarHa_mean", "AntalBjorkarHa_mean", "AntalOvrigaHa_mean", # Competitor species
                                                  "Mean_seasonal_temp[c]_mean", "Mean_seasonal_precipitation[mm]_mean","mean_seasonal_snowdepth[cm]_mean")], # Climate
                   method = "pearson", use = "pairwise.complete.obs")
 
@@ -249,9 +249,9 @@ lm_RASE_Ha_BHAA <- lm(AntalRASEHa_mean ~ scale(BestHojdAllaAVG_mean), data = RAS
 # Compare Models Using AIC
 AIC(lm_RASE_Ha_MBH, lm_RASE_Ha_BHAA)
 
-# First three-point average (2018-2020)
+# First three-point average (2018-2022)
 RASE_data_first_3_point_avg <- RASE_data_NA %>%
-  filter(InvAr >= 2018 & InvAr <= 2020) %>%  # Keep only relevant years
+  filter(InvAr >= 2018 & InvAr <= 2022) %>%  # Keep only relevant years
   group_by(Registreri, LandsdelNamn, LanNamn) %>%
   arrange(Registreri, InvAr) %>%  # Sort in ascending order
   slice_head(n = 3) %>%  # Select earliest 3 years within range
@@ -274,12 +274,11 @@ library(ggplot2)
 library(car)
 library(DHARMa)
 
-lm_RASE_Ha <- lm(AntalRASEHa_mean ~ scale(Älgtäthet.i.vinterstam_mean) +  
-                   scale(AntalTallarHa_mean) + scale(AntalBjorkarHa_mean) + 
-                   scale(proportion_young_forest_mean) + scale(AndelBordigaMarker_mean) + 
-                   scale(youngforest_area_ha_mean) + scale(Medelbestandshojd_mean) + 
-                   scale(AndelRojt...18_mean) + scale(BestandAlder_mean) +
-                   scale(`Mean_seasonal_temp[c]_mean`),
+lm_RASE_Ha <- lm(AntalRASEHa_mean ~ scale(Älgtäthet.i.vinterstam_mean) + scale(ungulate_index_mean) + scale(WB1000_mean) +
+                   scale(AntalTallarHa_mean) + scale(AntalBjorkarHa_mean) + scale(AntalOvrigtHa_mean) +
+                   scale(proportion_young_forest_mean) + scale(AndelBordigaMarker_mean) + scale(youngforest_area_ha_mean) + 
+                   scale(Medelbestandshojd_mean) + scale(AndelRojt...18_mean) + scale(BestandAlder_mean) +
+                   scale(`mean_seasonal_snowdepth[cm]_mean`) + scale(`Mean_seasonal_precipitation[mm]_mean`),
                  data = RASE_data_last_3_point_avg)
 
 summary(lm_RASE_Ha)

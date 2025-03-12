@@ -242,13 +242,22 @@ library(ggplot2)
 library(car)
 library(DHARMa)
 
-glm_RASE_Ha <- glmer.nb(AntalRASEHa ~ scale(Älgtäthet.i.vinterstam) + scale(ungulate_index) + scale(WB1000) +  
-                             scale(AntalTallarHa) + scale(AntalBjorkarHa) + scale(AntalOvrigtHa) +
-                             scale(proportion_young_forest) + scale(AndelBordigaMarker) + scale(youngforest_area_ha) +
-                             scale(Medelbestandshojd) + scale(AndelRojt...18) + scale(BestandAlder) +
-                             scale(`mean_seasonal_snowdepth[cm]`) + scale(`Mean_seasonal_precipitation[mm]`) +
-                             (1 | Registreri) + (1 | InvAr), # Should I remove InvAr as random effect (is singular)?
-                           data = RASE_data_NA)
+glm_RASE_Ha <- glmer.nb(AntalRASEHa ~ scale(Älgtäthet.i.vinterstam) + 
+                          scale(ungulate_index) + 
+                          scale(WB1000) +  
+                          scale(AntalTallarHa) + 
+                          scale(AntalBjorkarHa) + 
+                          scale(AntalOvrigtHa) +
+                          scale(proportion_young_forest) + 
+                          scale(AndelBordigaMarker) + 
+                          scale(youngforest_area_ha) +
+                          scale(Medelbestandshojd) + 
+                          scale(AndelRojt...18) + 
+                          scale(BestandAlder) +
+                          scale(`mean_seasonal_snowdepth[cm]`) + 
+                          scale(`Mean_seasonal_precipitation[mm]`) +
+                          (1 | Registreri) + (1 | InvAr), # Should I remove InvAr as random effect (is singular)?
+                          data = RASE_data_NA)
 summary(glm_RASE_Ha)
 
 # Check variance inflation factor (VIF)

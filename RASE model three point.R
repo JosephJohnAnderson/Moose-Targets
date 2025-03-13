@@ -430,11 +430,11 @@ glm_RASE_Ha_N <- glm(AntalRASEHa_mean ~ scale(Älgtäthet.i.vinterstam_mean) +
                       scale(AntalBjorkarHa_mean) +
                       scale(AntalOvrigtHa_mean) +
                       scale(proportion_young_forest_mean) +
-                      scale(AndelBordigaMarker_mean) +
+                      # scale(AndelBordigaMarker_mean) +
                       scale(youngforest_area_ha_mean) +
                       scale(Medelbestandshojd_mean) +
-                      # scale(AndelRojt...18_mean) +
-                      # scale(`mean_seasonal_snowdepth[cm]_imputed_mean`) +
+                      scale(AndelRojt...18_mean) +
+                      scale(`mean_seasonal_snowdepth[cm]_imputed_mean`) +
                       scale(`Mean_seasonal_precipitation[mm]_imputed_mean`),
                     family = Gamma(link = "log"),
                     data = RASE_data_Norrland)
@@ -503,9 +503,7 @@ glm_RASE_Ha_S <- glm(AntalRASEHa_mean ~ scale(Älgtäthet.i.vinterstam_mean) +
                    family = Gamma(link = "log"),
                    data = RASE_data_Svealand)
 
-
 summary(glm_RASE_Ha_S)
-
 
 # Check variance inflation factor (VIF)
 vif(glm_RASE_Ha_S)
@@ -597,21 +595,38 @@ AIC(best_glm_RASE_Ha_G, glm_RASE_Ha_G)
 
 ## RASE at competitive height national ####
 library(dplyr)
-library(glmmTMB)
+library(betareg)
 library(MuMIn)
 library(ggplot2)
 library(sjPlot)
 
-RASE_competative_betar <- glmmTMB(RASEAndelGynnsam ~ scale(Älgtäthet.i.vinterstam) +  
-                                    scale(AntalTallarHa) + scale(AntalBjorkarHa) + 
-                                    scale(proportion_young_forest) + scale(AndelBordigaMarker) + 
-                                    scale(youngforest_area_ha) + scale(Medelbestandshojd) +
-                                    scale(AndelRojt...18) + scale(BestandAlder) +
-                                    scale(`mean_seasonal_snowdepth[cm]`) +
-                                    (1 | Registreri) + (1 | InvAr), 
-                                  data = RASE_data_NA)
+RASE_competative_betar <- betareg(RASEAndelGynnsam_mean ~ scale(Älgtäthet.i.vinterstam_mean) +
+                                    scale(ungulate_index_mean) +
+                                    scale(WB1000_mean) +
+                                    scale(AntalTallarHa_mean) +
+                                    scale(AntalBjorkarHa_mean) +
+                                    scale(AntalOvrigtHa_mean) +
+                                    scale(proportion_young_forest_mean) +
+                                    scale(AndelBordigaMarker_mean) +
+                                    scale(youngforest_area_ha_mean) +
+                                    scale(Medelbestandshojd_mean) +
+                                    scale(AndelRojt...18_mean) +
+                                    scale(`mean_seasonal_snowdepth[cm]_imputed_mean`) +
+                                    scale(`Mean_seasonal_precipitation[mm]_imputed_mean`),
+                                  data = RASE_data_5y_3_point_avg)
 
 summary(RASE_competative_betar)
+
+# Check variance inflation factor (VIF)
+vif(RASE_competative_betar)
+
+# Check for over dispersal
+glm_RASE_Ha_simres <- simulateResiduals(RASE_competative_betar)
+testDispersion(glm_RASE_Ha_simres)
+
+# Check for normality of residuals
+shapiro.test(residuals(RASE_competative_betar))  # Shapiro-Wilk test
+qqnorm(residuals(RASE_competative_betar)); qqline(residuals(RASE_competative_betar), col = "red")  # Q-Q plot
 
 # Run model selection 
 options(na.action = "na.fail")  # Prevent `dredge` from failing silently due to missing data
@@ -623,7 +638,6 @@ best_RASEbetar <- get.models(dredged_RASEbetar, subset = 1)[[1]]
 summary(best_RASEbetar)
 
 plot_model(RASE_competative_betar, type = "est", show.values = TRUE, show.p = TRUE)
-
 
 # Plot fixed effects from the GLMM
 # Extract coefficients for the fixed effects
@@ -649,17 +663,20 @@ fixed_effects_glm$Significance <- case_when(
 
 # Rename terms using recode (without !!!)
 fixed_effects_glm$Term <- dplyr::recode(fixed_effects_glm$Term,
-                                        "scale(Älgtäthet.i.vinterstam)" = "Moose Density",        
-                                        "scale(FD1000)" = "Fallow Deer Density",
-                                        "scale(WB1000)" = "Wild Boar Density",
-                                        "scale(AntalTallarHa)" = "Number of Pine Trees per Ha",
-                                        "scale(AntalBjorkarHa)" = "Number of Birch Trees per Ha",
-                                        "scale(proportion_young_forest)" = "Proportion of Young Forest",
-                                        "scale(AndelBordigaMarker)" = "Proportion on Productive Land",
-                                        "scale(youngforest_area_ha)" = "Young Forest Area (Ha)",
-                                        "scale(BestandAlder)" = "Stand Age",
-                                        "scale(`mean_seasonal_snowdepth[cm]`)" = "Mean Seasonal Snow Depth", 
-                                        "scale(`Mean_seasonal_precipitation[mm]`)" = "Mean Seasonal Precipitation"
+                                        "scale(Älgtäthet.i.vinterstam_mean)" = "Moose Density",        
+                                        "scale(FD1000_mean)" = "Fallow Deer Density",
+                                        "scale(WB1000_mean)" = "Wild Boar Density",
+                                        "scale(AntalTallarHa_mean)" = "Number of Pines per Ha",
+                                        "scale(AntalBjorkarHa_mean)" = "Number of Birches per Ha",
+                                        "scale(AntalOvrigtHa_mean)" = "Number of Other Trees per Ha",
+                                        "scale(proportion_young_forest_mean)" = "Proportion Young Forest",
+                                        "scale(AndelBordigaMarker_mean)" = "Proportion on Productive Land",
+                                        "scale(youngforest_area_ha_mean)" = "Young Forest Area (Ha)",
+                                        "scale(BestandAlder_mean)" = "Stand Age",
+                                        "scale(Medelbestandshojd_mean)" = "Average Stand Height",
+                                        "scale(AndelRojt...18_mean)" = "Proportion PCT",
+                                        "scale(`mean_seasonal_snowdepth[cm]_imputed_mean`)" = "Mean Seasonal Snow Depth", 
+                                        "scale(`Mean_seasonal_precipitation[mm]_imputed_mean`)" = "Mean Winter Precipitation"
 )
 
 # Plot with ggplot2
@@ -756,4 +773,4 @@ tab_model(best_glm_RASE_Ha, best_glm_RASE_Ha_N, best_glm_RASE_Ha_S, best_glm_RAS
           show.stat = TRUE,
           #show.bic = TRUE,
           #show.icc = FALSE,
-          file = "~/GitHub/Moose-Targets/Tables/RASE_Ha_2020_2024_table.html")
+          file = "~/GitHub/Moose-Targets/Tables/RASE_Ha_abin_table.html")

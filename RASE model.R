@@ -132,13 +132,13 @@ Calf_weights <- Calf_weights %>%
 
 ## Join data ####
 
-# Add young forest area to data set
-Big_data <- Weather %>%
-  left_join(Young_forest, by = c("Registreri" = "moose_area_id", "InvAr" = "year"))      
+# Add ÄBIN and weather data to big data set
+Big_data <- SKS_ABIN %>%
+  left_join(Weather, by = c("Registreri", "InvAr"))
 
-# Add ÄBIN data to big data set
+# Add young forest area to data set
 Big_data <- Big_data %>%
-  left_join(SKS_ABIN, by = c("Registreri", "InvAr"))
+  left_join(Young_forest, by = c("Registreri" = "moose_area_id", "InvAr" = "year"))      
 
 # Add moose densities
 Big_data <- Big_data %>%

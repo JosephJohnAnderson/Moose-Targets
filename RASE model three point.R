@@ -24,7 +24,7 @@ Weather <- read.xlsx("//storage-um.slu.se/restricted$/vfm/Vilt-Skog/Moose-Target
 Weather$InvAr <- as.numeric(Weather$InvAr)
 
 # Moose density
-Moose_density <- read.xlsx("//storage-um.slu.se/restricted$/vfm/Vilt-Skog/Moose-Targets/Moose/kjell_moose_data_250105.xlsx")
+Moose_density <- read.xlsx("//storage-um.slu.se/restricted$/vfm/Vilt-Skog/Moose-Targets/Moose/kjell_moose_data_corrected_250314.xlsx")
 
 # Mutate Moose_density "ÄFO-id" column
 Moose_density <- Moose_density %>%

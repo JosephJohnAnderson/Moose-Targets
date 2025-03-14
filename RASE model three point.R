@@ -290,7 +290,7 @@ glm_RASE_Ha <- glm(AntalRASEHa_mean ~ scale(Älgtäthet.i.vinterstam_mean) +
                      # scale(`mean_seasonal_snowdepth[cm]_imputed_mean`) +
                      scale(`Mean_seasonal_precipitation[mm]_imputed_mean`),
                    family = Gamma(link = "log"),
-                   data = RASE_data_abin_3_point_avg)
+                   data = RASE_data_5y_3_point_avg)
 
 summary(glm_RASE_Ha)
 
@@ -315,7 +315,7 @@ summary(glm_RASE_Ha)
 vif(glm_RASE_Ha)
 
 # Check for over dispersal
-glm_RASE_Ha_simres <- simulateResiduals(glm_RASE_Ha_nb)
+glm_RASE_Ha_simres <- simulateResiduals(glm_RASE_Ha)
 testDispersion(glm_RASE_Ha_simres)
 
 # Check for normality of residuals
@@ -396,7 +396,7 @@ RASE_Ha_plot <- ggplot(fixed_effects_glm, aes(x = Term, y = Estimate, ymin = Est
 RASE_Ha_plot
 
 # Export plot
-ggsave("RASE_Ha_abin_plot.tiff", plot = RASE_Ha_plot, path = "~/GitHub/Moose-Targets/Plots", 
+ggsave("RASE_Ha_5y_plot.tiff", plot = RASE_Ha_plot, path = "~/GitHub/Moose-Targets/Plots", 
        scale = 1, width = 14, height = 14, dpi = 300, units = "cm")
 
 ## RASE per hectare regions ####
@@ -404,7 +404,7 @@ ggsave("RASE_Ha_abin_plot.tiff", plot = RASE_Ha_plot, path = "~/GitHub/Moose-Tar
 # Take RASE_data_NA and filter for regions
 
 ## Norrland
-RASE_data_Norrland <- RASE_data_abin_3_point_avg %>%
+RASE_data_Norrland <- RASE_data_5y_3_point_avg %>%
   filter(LandsdelNamn %in% c("Södra Norrland", "Norra Norrland"))
 
 # Create a correlation matrix
@@ -468,7 +468,7 @@ summary(best_glm_RASE_Ha_N)
 AIC(best_glm_RASE_Ha_N, glm_RASE_Ha_N)
 
 ## Svealand
-RASE_data_Svealand <- RASE_data_abin_3_point_avg %>%
+RASE_data_Svealand <- RASE_data_5y_3_point_avg %>%
   filter(LandsdelNamn %in% c("Svealand"))
 
 # Create a correlation matrix
@@ -532,7 +532,7 @@ summary(best_glm_RASE_Ha_S)
 AIC(best_glm_RASE_Ha_S, glm_RASE_Ha_S)
 
 ## Götaland
-RASE_data_Gotaland <- RASE_data_abin_3_point_avg %>%
+RASE_data_Gotaland <- RASE_data_5y_3_point_avg %>%
   filter(LandsdelNamn %in% c("Götaland"))
 
 # Create a correlation matrix
@@ -773,4 +773,4 @@ tab_model(best_glm_RASE_Ha, best_glm_RASE_Ha_N, best_glm_RASE_Ha_S, best_glm_RAS
           show.stat = TRUE,
           #show.bic = TRUE,
           #show.icc = FALSE,
-          file = "~/GitHub/Moose-Targets/Tables/RASE_Ha_abin_table.html")
+          file = "~/GitHub/Moose-Targets/Tables/RASE_Ha_5y_table.html")

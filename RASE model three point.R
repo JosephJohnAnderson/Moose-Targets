@@ -278,38 +278,16 @@ library(MASS)
 # Use gamma model (log link) as data is count-like and positively skewed
 glm_RASE_Ha <- glm(AntalRASEHa_mean ~ scale(Älgtäthet.i.vinterstam_mean) +
                      scale(ungulate_index_mean) +
-                     scale(WB1000_mean) +
                      scale(AntalTallarHa_mean) +
                      scale(AntalBjorkarHa_mean) +
                      scale(AntalOvrigtHa_mean) +
                      scale(proportion_young_forest_mean) +
-                     scale(AndelBordigaMarker_mean) +
-                     scale(youngforest_area_ha_mean) +
-                     scale(Medelbestandshojd_mean) +
-                     scale(AndelRojt...18_mean) +
-                     # scale(`mean_seasonal_snowdepth[cm]_imputed_mean`) +
+                     scale(BestandAlder_mean) +
                      scale(`Mean_seasonal_precipitation[mm]_imputed_mean`),
                    family = Gamma(link = "log"),
-                   data = RASE_data_5y_3_point_avg)
+                   data = RASE_data_abin_3_point_avg)
 
 summary(glm_RASE_Ha)
-
-# Alternatively try a negative binomial model (NB response variable is not an integer!)
-# glm_RASE_Ha_nb <- glm.nb(AntalRASEHa_mean ~ scale(Älgtäthet.i.vinterstam_mean) +
-#                           scale(ungulate_index_mean) +
-#                           scale(WB1000_mean) +
-#                           scale(AntalTallarHa_mean) +
-#                           scale(AntalBjorkarHa_mean) +
-#                           scale(AntalOvrigtHa_mean) +
-#                           scale(proportion_young_forest_mean) +
-#                           scale(AndelBordigaMarker_mean) +
-#                           scale(youngforest_area_ha_mean) +
-#                           scale(Medelbestandshojd_mean) +
-#                           scale(AndelRojt...18_mean) +
-#                           scale(BestandAlder_mean) +
-#                           scale(`Mean_seasonal_precipitation[mm]_imputed_mean`),
-#                         data = RASE_data_5y_3_point_avg)
-
 
 # Check variance inflation factor (VIF)
 vif(glm_RASE_Ha)
@@ -325,21 +303,44 @@ qqnorm(residuals(glm_RASE_Ha)); qqline(residuals(glm_RASE_Ha), col = "red")  # Q
 # Use "drop1" to drop one predictor at a time and compare AIC values
 drop1(glm_RASE_Ha, test = "Chisq")
 
-# Once happy with model type and variables Run model selection 
-options(na.action = "na.fail")  # Prevent `dredge` from failing silently due to missing data
-dredged_glm_RASE <- dredge(glm_RASE_Ha)
-summary(dredged_glm_RASE)
+# Refine model
+# Original model AIC = 1686.248
+# 1st round: dropped scale(ungulate_index_mean), model AIC = 1684.3
+# 2nd round: dropped scale(Älgtäthet.i.vinterstam_mean)
+# 3rd round: 
+# 4th round: 
+best_glm_RASE_Ha <-  glm(AntalRASEHa_mean ~ scale(Älgtäthet.i.vinterstam_mean) +
+                                         scale(AntalTallarHa_mean) +
+                                         scale(AntalBjorkarHa_mean) +
+                                         scale(AntalOvrigtHa_mean) +
+                                         scale(proportion_young_forest_mean) +
+                                         scale(BestandAlder_mean) +
+                                         scale(`Mean_seasonal_precipitation[mm]_imputed_mean`),
+                                       family = Gamma(link = "log"),
+                                       data = RASE_data_abin_3_point_avg)
 
-# Select models within ΔAIC < 2 of the best model
-top_glm_RASE <- subset(dredged_glm_RASE, subset = delta < 2)
-summary(top_glm_RASE)
-
-# Get the best model (rank 1)
-best_glm_RASE_Ha <- get.models(dredged_glm_RASE, subset = 1)[[1]]
 summary(best_glm_RASE_Ha)
 
-# Check the AIC compared to the original model
+# Check variance inflation factor (VIF)
+vif(best_glm_RASE_Ha)
+
+# Check for over dispersal
+best_glm_RASE_Ha_simres <- simulateResiduals(best_glm_RASE_Ha)
+testDispersion(best_glm_RASE_Ha_simres)
+
+# Check for normality of residuals
+shapiro.test(residuals(best_glm_RASE_Ha))  # Shapiro-Wilk test
+qqnorm(residuals(best_glm_RASE_Ha)); qqline(residuals(best_glm_RASE_Ha), col = "red")  # Q-Q plot
+
+# Check the final AIC compared to the original model
 AIC(best_glm_RASE_Ha, glm_RASE_Ha)
+
+# Use drop1 to find the next variable to drop
+drop1(best_glm_RASE_Ha, test = "Chisq")
+
+# Test if step basically does the same thing
+step(glm_RASE_Ha, direction = "backward", trace = TRUE)
+step(glm_RASE_Ha, direction = "forward", trace = TRUE)
 
 # Plot fixed effects from the GLM
 # Extract coefficients for the fixed effects

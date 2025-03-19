@@ -184,8 +184,8 @@ RASE_data <- Big_data %>%
   dplyr::select(LandsdelNamn,LanNamn, # Regional data
                 AntalRASEHa, RASEAndelGynnsam, # Independent variables 
                 Älgtäthet.i.vinterstam, Roe1000, FD1000, Red1000, WB1000, ungulate_index, # Browsers
-                youngforest_area_ha, proportion_young_forest, AndelBordigaMarker, BestHojdAllaAVG, BestandAlder, # Site
-                Medelbestandshojd, AndelRojt...18, # Site
+                youngforest_area_ha, proportion_young_forest, AndelBordigaMarker, BestHojdAbinAVG, BestandAlder, # Site
+                Medelbestandshojd, AndelRojt...18, BestHojdAbinArealV, # Site
                 AntalGranarHa, AntalTallarHa, AntalBjorkarHa, AntalOvrigtHa, # Competitor species
                 `Mean_seasonal_temp[c]_imputed`, `Mean_seasonal_precipitation[mm]_imputed`, `mean_seasonal_snowdepth[cm]_imputed`, # Climate
                 InvAr, Registreri) # Random effects
@@ -241,15 +241,15 @@ print(RASE_data_abin_3_point_avg)
 # Check for potential co-linearity
 # Calculate correlation matrices
 cor_matrix_5y <- cor(RASE_data_5y_3_point_avg[, c("Älgtäthet.i.vinterstam_mean", "ungulate_index_mean", "WB1000_mean", "Roe1000_mean", "FD1000_mean", "Red1000_mean", "WB1000_mean", # Browsers
-                                               "BestHojdAllaAVG_mean", "BestandAlder_mean", "Medelbestandshojd_mean", "AndelRojt...18_mean", # Site
-                                               "AndelBordigaMarker_mean", "youngforest_area_ha_mean", "proportion_young_forest_mean", # Site
+                                               "BestHojdAbinAVG_mean", "BestandAlder_mean", "Medelbestandshojd_mean", "AndelRojt...18_mean", # Site
+                                               "AndelBordigaMarker_mean", "youngforest_area_ha_mean", "proportion_young_forest_mean", "BestHojdAbinArealV_mean", # Site
                                                "AntalGranarHa_mean", "AntalTallarHa_mean", "AntalBjorkarHa_mean", "AntalOvrigtHa_mean", # Competitor species
                                                "Mean_seasonal_temp[c]_imputed_mean", "Mean_seasonal_precipitation[mm]_imputed_mean","mean_seasonal_snowdepth[cm]_imputed_mean")], # Climate
                   method = "pearson", use = "pairwise.complete.obs")
 
 cor_matrix_abin <- cor(RASE_data_abin_3_point_avg[, c("Älgtäthet.i.vinterstam_mean", "ungulate_index_mean", "WB1000_mean", "Roe1000_mean", "FD1000_mean", "Red1000_mean", "WB1000_mean", # Browsers
-                                                  "BestHojdAllaAVG_mean", "BestandAlder_mean", "Medelbestandshojd_mean", "AndelRojt...18_mean", # Site
-                                                  "AndelBordigaMarker_mean", "youngforest_area_ha_mean", "proportion_young_forest_mean", # Site
+                                                  "BestHojdAbinAVG_mean", "BestandAlder_mean", "Medelbestandshojd_mean", "AndelRojt...18_mean", # Site
+                                                  "AndelBordigaMarker_mean", "youngforest_area_ha_mean", "proportion_young_forest_mean", "BestHojdAbinArealV_mean", # Site
                                                   "AntalGranarHa_mean", "AntalTallarHa_mean", "AntalBjorkarHa_mean", "AntalOvrigtHa_mean", # Competitor species
                                                   "Mean_seasonal_temp[c]_imputed_mean", "Mean_seasonal_precipitation[mm]_imputed_mean","mean_seasonal_snowdepth[cm]_imputed_mean")], # Climate
                      method = "pearson", use = "pairwise.complete.obs")
@@ -282,7 +282,7 @@ glm_RASE_Ha <- glm(AntalRASEHa_mean ~ scale(Älgtäthet.i.vinterstam_mean) +
                      scale(AntalBjorkarHa_mean) +
                      scale(AntalOvrigtHa_mean) +
                      scale(proportion_young_forest_mean) +
-                     scale(BestandAlder_mean) +
+                     scale(BestHojdAbinArealV_mean) +
                      scale(`Mean_seasonal_precipitation[mm]_imputed_mean`),
                    family = Gamma(link = "log"),
                    data = RASE_data_abin_3_point_avg)
@@ -304,20 +304,21 @@ qqnorm(residuals(glm_RASE_Ha)); qqline(residuals(glm_RASE_Ha), col = "red")  # Q
 drop1(glm_RASE_Ha, test = "Chisq")
 
 # Refine model
-# Original model AIC = 1686.248
-# 1st round: dropped scale(ungulate_index_mean), model AIC = 1684.3
-# 2nd round: dropped scale(Älgtäthet.i.vinterstam_mean)
+# Original model AIC = 1689.263
+# 1st round: dropped scale(BestHojdAbinAVG_mean), model AIC = 
+# 2nd round: 
 # 3rd round: 
 # 4th round: 
-best_glm_RASE_Ha <-  glm(AntalRASEHa_mean ~ scale(Älgtäthet.i.vinterstam_mean) +
-                                         scale(AntalTallarHa_mean) +
-                                         scale(AntalBjorkarHa_mean) +
-                                         scale(AntalOvrigtHa_mean) +
-                                         scale(proportion_young_forest_mean) +
-                                         scale(BestandAlder_mean) +
-                                         scale(`Mean_seasonal_precipitation[mm]_imputed_mean`),
-                                       family = Gamma(link = "log"),
-                                       data = RASE_data_abin_3_point_avg)
+best_glm_RASE_Ha <- glm(AntalRASEHa_mean ~ scale(Älgtäthet.i.vinterstam_mean) +
+                                          scale(ungulate_index_mean) +
+                                          scale(AntalTallarHa_mean) +
+                                          scale(AntalBjorkarHa_mean) +
+                                          scale(AntalOvrigtHa_mean) +
+                                          scale(proportion_young_forest_mean) +
+                                          scale(BestHojdAbinArealV_mean) +
+                                          scale(`Mean_seasonal_precipitation[mm]_imputed_mean`),
+                                        family = Gamma(link = "log"),
+                                        data = RASE_data_abin_3_point_avg)
 
 summary(best_glm_RASE_Ha)
 

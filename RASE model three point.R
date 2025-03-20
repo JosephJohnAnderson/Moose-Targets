@@ -300,52 +300,60 @@ testDispersion(glm_RASE_Ha_simres)
 shapiro.test(residuals(glm_RASE_Ha))  # Shapiro-Wilk test
 qqnorm(residuals(glm_RASE_Ha)); qqline(residuals(glm_RASE_Ha), col = "red")  # Q-Q plot
 
-# Use "drop1" to drop one predictor at a time and compare AIC values
-drop1(glm_RASE_Ha, test = "Chisq")
-
-# Refine model
-# Original model AIC = 1689.263
-# 1st round: dropped scale(BestHojdAbinAVG_mean), model AIC = 
-# 2nd round: 
-# 3rd round: 
-# 4th round: 
-best_glm_RASE_Ha <- glm(AntalRASEHa_mean ~ scale(Älgtäthet.i.vinterstam_mean) +
-                                          scale(ungulate_index_mean) +
-                                          scale(AntalTallarHa_mean) +
-                                          scale(AntalBjorkarHa_mean) +
-                                          scale(AntalOvrigtHa_mean) +
-                                          scale(proportion_young_forest_mean) +
-                                          scale(BestHojdAbinArealV_mean) +
-                                          scale(`Mean_seasonal_precipitation[mm]_imputed_mean`),
-                                        family = Gamma(link = "log"),
-                                        data = RASE_data_abin_3_point_avg)
-
-summary(best_glm_RASE_Ha)
+# Backward stepwise selection
+glm_RASE_Ha_bck <- step(glm_RASE_Ha, direction = "backward", trace = TRUE) # same result as drop1
+summary(glm_RASE_Ha_bck)
 
 # Check variance inflation factor (VIF)
-vif(best_glm_RASE_Ha)
+vif(glm_RASE_Ha_bck)
 
 # Check for over dispersal
-best_glm_RASE_Ha_simres <- simulateResiduals(best_glm_RASE_Ha)
-testDispersion(best_glm_RASE_Ha_simres)
+bck_glm_RASE_Ha_simres <- simulateResiduals(glm_RASE_Ha_bck)
+testDispersion(bck_glm_RASE_Ha_simres)
 
 # Check for normality of residuals
-shapiro.test(residuals(best_glm_RASE_Ha))  # Shapiro-Wilk test
-qqnorm(residuals(best_glm_RASE_Ha)); qqline(residuals(best_glm_RASE_Ha), col = "red")  # Q-Q plot
+shapiro.test(residuals(glm_RASE_Ha_bck))  # Shapiro-Wilk test
+qqnorm(residuals(glm_RASE_Ha_bck)); qqline(residuals(glm_RASE_Ha_bck), col = "red")  # Q-Q plot
+
+# USE step() for forwards stepwise selection
+# Fit an initial empty model
+glm_RASE_Ha_null <- glm(AntalRASEHa_mean ~ 1,  # Model with no predictors
+                          family = Gamma(link = "log"),
+                          data = RASE_data_abin_3_point_avg)
+
+# Fit a forward stepwise model
+glm_RASE_Ha_fwd <- step(glm_RASE_Ha_null, 
+                          scope = list(lower = glm_RASE_Ha_null, 
+                                       upper = ~ scale(Älgtäthet.i.vinterstam_mean) +
+                                         scale(ungulate_index_mean) +
+                                         scale(AntalTallarHa_mean) +
+                                         scale(AntalBjorkarHa_mean) +
+                                         scale(AntalOvrigtHa_mean) +
+                                         scale(proportion_young_forest_mean) +
+                                         scale(BestHojdAbinArealV_mean) +
+                                         scale(`Mean_seasonal_precipitation[mm]_imputed_mean`),
+                                       direction = "forward", 
+                                       trace = TRUE))
+
+summary(glm_RASE_Ha_fwd)
+
+# Check variance inflation factor (VIF)
+vif(glm_RASE_Ha_fwd)
+
+# Check for over dispersal
+fwd_glm_RASE_Ha_simres <- simulateResiduals(glm_RASE_Ha_fwd)
+testDispersion(fwd_glm_RASE_Ha_simres)
+
+# Check for normality of residuals
+shapiro.test(residuals(glm_RASE_Ha_fwd))  # Shapiro-Wilk test
+qqnorm(residuals(glm_RASE_Ha_fwd)); qqline(residuals(glm_RASE_Ha_fwd), col = "red")  # Q-Q plot
 
 # Check the final AIC compared to the original model
-AIC(best_glm_RASE_Ha, glm_RASE_Ha)
-
-# Use drop1 to find the next variable to drop
-drop1(best_glm_RASE_Ha, test = "Chisq")
-
-# Test if step basically does the same thing
-step(glm_RASE_Ha, direction = "backward", trace = TRUE)
-step(glm_RASE_Ha, direction = "forward", trace = TRUE)
+AIC(glm_RASE_Ha_bck, glm_RASE_Ha_fwd,  glm_RASE_Ha)
 
 # Plot fixed effects from the GLM
 # Extract coefficients for the fixed effects
-coef_glm <- summary(best_glm_RASE_Ha)$coefficients
+coef_glm <- summary(glm_RASE_Ha_bck)$coefficients
 
 # Convert to dataframe
 fixed_effects_glm <- data.frame(
@@ -398,7 +406,7 @@ RASE_Ha_plot <- ggplot(fixed_effects_glm, aes(x = Term, y = Estimate, ymin = Est
 RASE_Ha_plot
 
 # Export plot
-ggsave("RASE_Ha_5y_plot.tiff", plot = RASE_Ha_plot, path = "~/GitHub/Moose-Targets/Plots", 
+ggsave("RASE_Ha_abin_plot.tiff", plot = RASE_Ha_plot, path = "~/GitHub/Moose-Targets/Plots", 
        scale = 1, width = 14, height = 14, dpi = 300, units = "cm")
 
 ## RASE per hectare regions ####
@@ -406,15 +414,15 @@ ggsave("RASE_Ha_5y_plot.tiff", plot = RASE_Ha_plot, path = "~/GitHub/Moose-Targe
 # Take RASE_data_NA and filter for regions
 
 ## Norrland
-RASE_data_Norrland <- RASE_data_5y_3_point_avg %>%
+RASE_data_Norrland <- RASE_data_abin_3_point_avg %>%
   filter(LandsdelNamn %in% c("Södra Norrland", "Norra Norrland"))
 
 # Create a correlation matrix
-cor_matrix_norr <- cor(RASE_data_Norrland[, c("Älgtäthet.i.vinterstam_mean", "ungulate_index_mean", "Roe1000_mean", "FD1000_mean", "Red1000_mean", "WB1000_mean", # Browsers
-                                                      "BestHojdAllaAVG_mean", "BestandAlder_mean", "Medelbestandshojd_mean", "AndelRojt...18_mean", # Site
-                                                      "AndelBordigaMarker_mean", "youngforest_area_ha_mean", "proportion_young_forest_mean", # Site
-                                                      "AntalGranarHa_mean", "AntalTallarHa_mean", "AntalBjorkarHa_mean", "AntalOvrigtHa_mean", # Competitor species
-                                                      "Mean_seasonal_temp[c]_imputed_mean", "Mean_seasonal_precipitation[mm]_imputed_mean","mean_seasonal_snowdepth[cm]_imputed_mean")], # Climate
+cor_matrix_norr <- cor(RASE_data_Norrland[, c("Älgtäthet.i.vinterstam_mean", "ungulate_index_mean", "WB1000_mean", "Roe1000_mean", "FD1000_mean", "Red1000_mean", "WB1000_mean", # Browsers
+                                              "BestHojdAbinAVG_mean", "BestandAlder_mean", "Medelbestandshojd_mean", "AndelRojt...18_mean", # Site
+                                              "AndelBordigaMarker_mean", "youngforest_area_ha_mean", "proportion_young_forest_mean", "BestHojdAbinArealV_mean", # Site
+                                              "AntalGranarHa_mean", "AntalTallarHa_mean", "AntalBjorkarHa_mean", "AntalOvrigtHa_mean", # Competitor species
+                                              "Mean_seasonal_temp[c]_imputed_mean", "Mean_seasonal_precipitation[mm]_imputed_mean","mean_seasonal_snowdepth[cm]_imputed_mean")], # Climate
                        method = "pearson", use = "pairwise.complete.obs")
 
 # Filter correlations greater than 0.7 or less than -0.7, excluding 1
@@ -426,20 +434,15 @@ filtered_cor_norr
 
 # Run the model
 glm_RASE_Ha_N <- glm(AntalRASEHa_mean ~ scale(Älgtäthet.i.vinterstam_mean) +
-                      # scale(ungulate_index_mean) +
-                      scale(WB1000_mean) +
-                      scale(AntalTallarHa_mean) +
-                      scale(AntalBjorkarHa_mean) +
-                      scale(AntalOvrigtHa_mean) +
-                      scale(proportion_young_forest_mean) +
-                      # scale(AndelBordigaMarker_mean) +
-                      scale(youngforest_area_ha_mean) +
-                      scale(Medelbestandshojd_mean) +
-                      scale(AndelRojt...18_mean) +
-                      scale(`mean_seasonal_snowdepth[cm]_imputed_mean`) +
-                      scale(`Mean_seasonal_precipitation[mm]_imputed_mean`),
-                    family = Gamma(link = "log"),
-                    data = RASE_data_Norrland)
+                       scale(ungulate_index_mean) +
+                       scale(AntalTallarHa_mean) +
+                       scale(AntalBjorkarHa_mean) +
+                       scale(AntalOvrigtHa_mean) +
+                       scale(proportion_young_forest_mean) +
+                       scale(BestHojdAbinArealV_mean) +
+                       scale(`Mean_seasonal_precipitation[mm]_imputed_mean`),
+                     family = Gamma(link = "log"),
+                     data = RASE_data_Norrland)
 
 summary(glm_RASE_Ha_N)
 
@@ -450,33 +453,50 @@ vif(glm_RASE_Ha_N)
 glm_RASE_Ha_N_simres <- simulateResiduals(glm_RASE_Ha_N)
 testDispersion(glm_RASE_Ha_N_simres)
 
-# Use "drop1" to drop one predictor at a time and compare AIC values
-drop1(glm_RASE_Ha_N, test = "Chisq")
+# Use step() for backwards stepwise selection
+glm_RASE_Ha_N_bck <- step(glm_RASE_Ha_N, direction = "backward", trace = TRUE) # same result as drop1
+summary(glm_RASE_Ha_N_bck)
 
-# Once happy with model type and variables Run model selection 
-options(na.action = "na.fail")  # Prevent `dredge` from failing silently due to missing data
-dredged_glm_RASE_Ha_N <- dredge(glm_RASE_Ha_N)
-summary(dredged_glm_RASE_Ha_N)
+# USE step() for forwards stepwise selection
+# Fit an initial empty model
+glm_RASE_Ha_N_null <- glm(AntalRASEHa_mean ~ 1,  # Model with no predictors
+                          family = Gamma(link = "log"),
+                          data = RASE_data_Norrland)
 
-# Select models within ΔAIC < 2 of the best model
-top_glm_RASE <- subset(dredged_glm_RASE_Ha_N, subset = delta < 2)
-summary(top_glm_RASE)
+# Fit a forward stepwise model
+glm_RASE_Ha_N_fwd <- step(glm_RASE_Ha_N_null, 
+                          scope = list(lower = glm_RASE_Ha_N_null, 
+                                       upper = ~ scale(Älgtäthet.i.vinterstam_mean) +
+                                         scale(ungulate_index_mean) +
+                                         scale(AntalTallarHa_mean) +
+                                         scale(AntalBjorkarHa_mean) +
+                                         scale(AntalOvrigtHa_mean) +
+                                         scale(proportion_young_forest_mean) +
+                                         scale(BestHojdAbinArealV_mean) +
+                                         scale(`Mean_seasonal_precipitation[mm]_imputed_mean`),
+                                       direction = "forward", 
+                                       trace = TRUE))
 
-# Get the best model (rank 1)
-best_glm_RASE_Ha_N <- get.models(dredged_glm_RASE_Ha_N, subset = 1)[[1]]
-summary(best_glm_RASE_Ha_N)
+summary(glm_RASE_Ha_N_fwd)
+
+# Check variance inflation factor (VIF)
+vif(glm_RASE_Ha_N_fwd)
+
+# Check for over dispersal
+glm_RASE_Ha_N_simres <- simulateResiduals(glm_RASE_Ha_N_fwd)
+testDispersion(glm_RASE_Ha_N_simres)
 
 # Check the AIC compared to the original model
-AIC(best_glm_RASE_Ha_N, glm_RASE_Ha_N)
+AIC(glm_RASE_Ha_N_fwd, glm_RASE_Ha_N)
 
 ## Svealand
-RASE_data_Svealand <- RASE_data_5y_3_point_avg %>%
+RASE_data_Svealand <- RASE_data_abin_3_point_avg %>%
   filter(LandsdelNamn %in% c("Svealand"))
 
 # Create a correlation matrix
 cor_matrix_svea <- cor(RASE_data_Svealand[, c("Älgtäthet.i.vinterstam_mean", "ungulate_index_mean", "WB1000_mean", "Roe1000_mean", "FD1000_mean", "Red1000_mean", "WB1000_mean", # Browsers
-                                              "BestHojdAllaAVG_mean", "BestandAlder_mean", "Medelbestandshojd_mean", "AndelRojt...18_mean", # Site
-                                              "AndelBordigaMarker_mean", "youngforest_area_ha_mean", "proportion_young_forest_mean", # Site
+                                              "BestHojdAbinAVG_mean", "BestandAlder_mean", "Medelbestandshojd_mean", "AndelRojt...18_mean", # Site
+                                              "AndelBordigaMarker_mean", "youngforest_area_ha_mean", "proportion_young_forest_mean", "BestHojdAbinArealV_mean", # Site
                                               "AntalGranarHa_mean", "AntalTallarHa_mean", "AntalBjorkarHa_mean", "AntalOvrigtHa_mean", # Competitor species
                                               "Mean_seasonal_temp[c]_imputed_mean", "Mean_seasonal_precipitation[mm]_imputed_mean","mean_seasonal_snowdepth[cm]_imputed_mean")], # Climate
                        method = "pearson", use = "pairwise.complete.obs")
@@ -488,22 +508,17 @@ filtered_cor_svea[abs(filtered_cor_svea) <= 0.7 | abs(filtered_cor_svea) == 1] <
 # View the filtered correlation matrix
 filtered_cor_svea
 
-# Run the model
+# Run the model (potentially over fitted, remove TallarHa?)
 glm_RASE_Ha_S <- glm(AntalRASEHa_mean ~ scale(Älgtäthet.i.vinterstam_mean) +
-                     scale(ungulate_index_mean) +
-                     scale(WB1000_mean) +
-                     scale(AntalTallarHa_mean) +
-                     scale(AntalBjorkarHa_mean) +
-                     scale(AntalOvrigtHa_mean) +
-                     scale(proportion_young_forest_mean) +
-                     scale(AndelBordigaMarker_mean) +
-                     scale(youngforest_area_ha_mean) +
-                     scale(Medelbestandshojd_mean) +
-                     scale(AndelRojt...18_mean) +
-                     scale(`mean_seasonal_snowdepth[cm]_imputed_mean`) +
-                     scale(`Mean_seasonal_precipitation[mm]_imputed_mean`),
-                   family = Gamma(link = "log"),
-                   data = RASE_data_Svealand)
+                       scale(ungulate_index_mean) +
+                       scale(AntalTallarHa_mean) +
+                       scale(AntalBjorkarHa_mean) +
+                       scale(AntalOvrigtHa_mean) +
+                       scale(proportion_young_forest_mean) +
+                       scale(BestHojdAbinArealV_mean) +
+                       scale(`Mean_seasonal_precipitation[mm]_imputed_mean`),
+                     family = Gamma(link = "log"),
+                     data = RASE_data_Svealand)
 
 summary(glm_RASE_Ha_S)
 
@@ -514,33 +529,46 @@ vif(glm_RASE_Ha_S)
 glm_RASE_Ha_S_simres <- simulateResiduals(glm_RASE_Ha_S)
 testDispersion(glm_RASE_Ha_S_simres)
 
-# Use "drop1" to drop one predictor at a time and compare AIC values
-drop1(glm_RASE_Ha_S, test = "Chisq")
+# USE step() for forwards stepwise selection
+# Fit an initial empty model
+glm_RASE_Ha_S_null <- glm(AntalRASEHa_mean ~ 1,  # Model with no predictors
+                          family = Gamma(link = "log"),
+                          data = RASE_data_Svealand)
 
-# Once happy with model type and variables Run model selection 
-options(na.action = "na.fail")  # Prevent `dredge` from failing silently due to missing data
-dredged_glm_RASE_Ha_S <- dredge(glm_RASE_Ha_S)
-summary(dredged_glm_RASE_Ha_S)
+# Fit a forward stepwise model
+glm_RASE_Ha_S_fwd <- step(glm_RASE_Ha_S_null, 
+                          scope = list(lower = glm_RASE_Ha_S_null, 
+                                       upper = ~ scale(Älgtäthet.i.vinterstam_mean) +
+                                         scale(ungulate_index_mean) +
+                                         scale(AntalTallarHa_mean) +
+                                         scale(AntalBjorkarHa_mean) +
+                                         scale(AntalOvrigtHa_mean) +
+                                         scale(proportion_young_forest_mean) +
+                                         scale(BestHojdAbinArealV_mean) +
+                                         scale(`Mean_seasonal_precipitation[mm]_imputed_mean`),
+                                       direction = "forward", 
+                                       trace = TRUE))
 
-# Select models within ΔAIC < 2 of the best model
-top_glm_RASE_s <- subset(dredged_glm_RASE_Ha_S, delta < 2)
-summary(top_glm_RASE_s)
+summary(glm_RASE_Ha_S_fwd)
 
-# Get the best model (rank 1)
-best_glm_RASE_Ha_S <- get.models(dredged_glm_RASE_Ha_S, subset = 1)[[1]]
-summary(best_glm_RASE_Ha_S)
+# Check variance inflation factor (VIF)
+vif(glm_RASE_Ha_S_fwd)
+
+# Check for over dispersal
+glm_RASE_Ha_S_simres <- simulateResiduals(glm_RASE_Ha_S_fwd)
+testDispersion(glm_RASE_Ha_S_simres)
 
 # Check the AIC compared to the original model
-AIC(best_glm_RASE_Ha_S, glm_RASE_Ha_S)
+AIC(glm_RASE_Ha_S_fwd, glm_RASE_Ha_S)
 
 ## Götaland
-RASE_data_Gotaland <- RASE_data_5y_3_point_avg %>%
+RASE_data_Gotaland <- RASE_data_abin_3_point_avg %>%
   filter(LandsdelNamn %in% c("Götaland"))
 
 # Create a correlation matrix
 cor_matrix_gota <- cor(RASE_data_Gotaland[, c("Älgtäthet.i.vinterstam_mean", "ungulate_index_mean", "WB1000_mean", "Roe1000_mean", "FD1000_mean", "Red1000_mean", "WB1000_mean", # Browsers
-                                              "BestHojdAllaAVG_mean", "BestandAlder_mean", "Medelbestandshojd_mean", "AndelRojt...18_mean", # Site
-                                              "AndelBordigaMarker_mean", "youngforest_area_ha_mean", "proportion_young_forest_mean", # Site
+                                              "BestHojdAbinAVG_mean", "BestandAlder_mean", "Medelbestandshojd_mean", "AndelRojt...18_mean", # Site
+                                              "AndelBordigaMarker_mean", "youngforest_area_ha_mean", "proportion_young_forest_mean", "BestHojdAbinArealV_mean", # Site
                                               "AntalGranarHa_mean", "AntalTallarHa_mean", "AntalBjorkarHa_mean", "AntalOvrigtHa_mean", # Competitor species
                                               "Mean_seasonal_temp[c]_imputed_mean", "Mean_seasonal_precipitation[mm]_imputed_mean","mean_seasonal_snowdepth[cm]_imputed_mean")], # Climate
                        method = "pearson", use = "pairwise.complete.obs")
@@ -553,21 +581,16 @@ filtered_cor_gota[abs(filtered_cor_gota) <= 0.7 | abs(filtered_cor_gota) == 1] <
 filtered_cor_gota
 
 # Run the model
-glm_RASE_Ha_G <- glm(log(AntalRASEHa_mean) ~ scale(Älgtäthet.i.vinterstam_mean) +
-                     scale(ungulate_index_mean) +
-                     scale(WB1000_mean) +
-                     scale(AntalTallarHa_mean) +
-                     scale(AntalBjorkarHa_mean) +
-                     scale(AntalOvrigtHa_mean) +
-                     scale(proportion_young_forest_mean) +
-                     scale(AndelBordigaMarker_mean) +
-                     scale(youngforest_area_ha_mean) +
-                     scale(Medelbestandshojd_mean) +
-                     scale(AndelRojt...18_mean) +
-                     scale(`mean_seasonal_snowdepth[cm]_imputed_mean`) +
-                     scale(`Mean_seasonal_precipitation[mm]_imputed_mean`),
-                   family = Gamma(link = "log"),
-                   data = RASE_data_Gotaland)
+glm_RASE_Ha_G <- glm(AntalRASEHa_mean ~ scale(Älgtäthet.i.vinterstam_mean) +
+                       scale(ungulate_index_mean) +
+                       scale(AntalGranarHa_mean) +
+                       scale(AntalBjorkarHa_mean) +
+                       scale(AntalOvrigtHa_mean) +
+                       scale(proportion_young_forest_mean) +
+                       scale(BestHojdAbinArealV_mean) +
+                       scale(`Mean_seasonal_precipitation[mm]_imputed_mean`),
+                     family = Gamma(link = "log"),
+                     data = RASE_data_Gotaland)
 
 
 summary(glm_RASE_Ha_G)
@@ -579,71 +602,119 @@ vif(glm_RASE_Ha_G)
 glm_RASE_Ha_G_simres <- simulateResiduals(glm_RASE_Ha_G)
 testDispersion(glm_RASE_Ha_G_simres)
 
-# Once happy with model type and variables Run model selection 
-options(na.action = "na.fail")  # Prevent `dredge` from failing silently due to missing data
-dredged_glm_RASE_Ha_G <- dredge(glm_RASE_Ha_G)
-summary(dredged_glm_RASE_Ha_G)
+# USE step() for forwards stepwise selection
+# Fit an initial empty model
+glm_RASE_Ha_G_null <- glm(AntalRASEHa_mean ~ 1,  # Model with no predictors
+                          family = Gamma(link = "log"),
+                          data = RASE_data_Gotaland)
 
-# Select models within ΔAIC < 2 of the best model
-top_glm_RASE_G <- subset(dredged_glm_RASE_Ha_G, delta < 2)
-summary(top_glm_RASE_G)
+# Fit a forward stepwise model
+glm_RASE_Ha_G_fwd <- step(glm_RASE_Ha_G_null, 
+                          scope = list(lower = glm_RASE_Ha_G_null, 
+                                       upper = ~ scale(Älgtäthet.i.vinterstam_mean) +
+                                         scale(ungulate_index_mean) +
+                                         scale(AntalGranarHa_mean) +
+                                         scale(AntalBjorkarHa_mean) +
+                                         scale(AntalOvrigtHa_mean) +
+                                         scale(proportion_young_forest_mean) +
+                                         scale(BestHojdAbinArealV_mean) +
+                                         scale(`Mean_seasonal_precipitation[mm]_imputed_mean`),
+                                       direction = "forward", 
+                                       trace = TRUE))
 
-# Get the best model (rank 1)
-best_glm_RASE_Ha_G <- get.models(dredged_glm_RASE_Ha_G, subset = 1)[[1]]
-summary(best_glm_RASE_Ha_G)
+summary(glm_RASE_Ha_G_fwd)
+
+# Check variance inflation factor (VIF)
+vif(glm_RASE_Ha_G_fwd)
+
+# Check for over dispersal
+glm_RASE_Ha_G_simres <- simulateResiduals(glm_RASE_Ha_G_fwd)
+testDispersion(glm_RASE_Ha_G_simres)
 
 # Check the AIC compared to the original model
-AIC(best_glm_RASE_Ha_G, glm_RASE_Ha_G)
+AIC(glm_RASE_Ha_G_fwd, glm_RASE_Ha_G)
 
 ## RASE at competitive height national ####
 library(dplyr)
-library(betareg)
+library(glmmTMB)
 library(MuMIn)
 library(ggplot2)
 library(sjPlot)
 
-RASE_competative_betar <- betareg(RASEAndelGynnsam_mean ~ scale(Älgtäthet.i.vinterstam_mean) +
+# Clip the values of RASEAndelGynnsam_mean
+RASE_data_abin_3_point_avg$RASEAndelGynnsam_mean <- pmax(pmin(RASE_data_abin_3_point_avg$RASEAndelGynnsam_mean, 0.9999), 0.0001)
+
+# Run the model
+glm_RASE_comp <- glmmTMB(RASEAndelGynnsam_mean ~ scale(Älgtäthet.i.vinterstam_mean) +
                                     scale(ungulate_index_mean) +
-                                    scale(WB1000_mean) +
                                     scale(AntalTallarHa_mean) +
                                     scale(AntalBjorkarHa_mean) +
                                     scale(AntalOvrigtHa_mean) +
                                     scale(proportion_young_forest_mean) +
-                                    scale(AndelBordigaMarker_mean) +
-                                    scale(youngforest_area_ha_mean) +
-                                    scale(Medelbestandshojd_mean) +
-                                    scale(AndelRojt...18_mean) +
-                                    scale(`mean_seasonal_snowdepth[cm]_imputed_mean`) +
+                                    scale(BestHojdAbinArealV_mean) +
                                     scale(`Mean_seasonal_precipitation[mm]_imputed_mean`),
-                                  data = RASE_data_5y_3_point_avg)
+                                  family = beta_family(link = "logit"),
+                                  data = RASE_data_abin_3_point_avg)
 
-summary(RASE_competative_betar)
-
-# Check variance inflation factor (VIF)
-vif(RASE_competative_betar)
+summary(glm_RASE_comp)
 
 # Check for over dispersal
-glm_RASE_Ha_simres <- simulateResiduals(RASE_competative_betar)
-testDispersion(glm_RASE_Ha_simres)
+glm_RASE_comp_simres <- simulateResiduals(glm_RASE_comp)
+testDispersion(glm_RASE_comp_simres)
 
 # Check for normality of residuals
 shapiro.test(residuals(RASE_competative_betar))  # Shapiro-Wilk test
 qqnorm(residuals(RASE_competative_betar)); qqline(residuals(RASE_competative_betar), col = "red")  # Q-Q plot
 
-# Run model selection 
-options(na.action = "na.fail")  # Prevent `dredge` from failing silently due to missing data
-dredged_RASEbetar <- dredge(RASE_competative_betar)
-summary(dredged_RASEbetar)
+# Backward stepwise selection
+glm_RASE_comp_bck <- step(glm_RASE_comp, direction = "backward", trace = TRUE) # same result as drop1
+summary(glm_RASE_comp_bck)
 
-# Get the best model (rank 1)
-best_RASEbetar <- get.models(dredged_RASEbetar, subset = 1)[[1]]
-summary(best_RASEbetar)
+# Check for over dispersal
+bck_glm_RASE_comp_simres <- simulateResiduals(glm_RASE_comp_bck)
+testDispersion(bck_glm_RASE_comp_simres)
 
-plot_model(RASE_competative_betar, type = "est", show.values = TRUE, show.p = TRUE)
+# Check for normality of residuals
+shapiro.test(residuals(glm_RASE_comp_bck))  # Shapiro-Wilk test
+qqnorm(residuals(glm_RASE_comp_bck)); qqline(residuals(glm_RASE_comp_bck), col = "red")  # Q-Q plot
+
+# USE step() for forwards stepwise selection
+# Fit an initial empty model
+glm_RASE_comp_null <- glmmTMB(RASEAndelGynnsam_mean ~ 1,  # Model with no predictors
+                        family = beta_family(link = "logit"),
+                        data = RASE_data_abin_3_point_avg)
+
+# Fit a forward stepwise model
+glm_RASE_comp_fwd <- step(glm_RASE_comp_null, 
+                        scope = list(lower = glm_RASE_comp_null, 
+                                     upper = ~ scale(Älgtäthet.i.vinterstam_mean) +
+                                       scale(ungulate_index_mean) +
+                                       scale(AntalTallarHa_mean) +
+                                       scale(AntalBjorkarHa_mean) +
+                                       scale(AntalOvrigtHa_mean) +
+                                       scale(proportion_young_forest_mean) +
+                                       scale(BestHojdAbinArealV_mean) +
+                                       scale(`Mean_seasonal_precipitation[mm]_imputed_mean`),
+                                     direction = "forward", 
+                                     trace = TRUE))
+
+summary(glm_RASE_comp_fwd)
+
+
+# Check for over dispersal
+fwd_glm_RASE_comp_simres <- simulateResiduals(glm_RASE_comp_fwd)
+testDispersion(fwd_glm_RASE_comp_simres)
+
+# Check for normality of residuals
+shapiro.test(residuals(glm_RASE_comp_fwd))  # Shapiro-Wilk test
+qqnorm(residuals(glm_RASE_comp_fwd)); qqline(residuals(glm_RASE_comp_fwd), col = "red")  # Q-Q plot
+
+# Check the final AIC compared to the original model
+AIC(glm_RASE_comp_bck, glm_RASE_comp_fwd,  glm_RASE_comp)
 
 # Plot fixed effects from the GLMM
 # Extract coefficients for the fixed effects
-coef_glm <- summary(best_RASEbetar)$coefficients$cond
+coef_glm <- summary(glm_RASE_comp_fwd)$coefficients$cond
 fixed_effects_glm <- data.frame(
   Term = rownames(coef_glm),
   Estimate = coef_glm[, "Estimate"],
@@ -694,7 +765,7 @@ RASE_Gyn_plot <- ggplot(fixed_effects_glm, aes(x = Term, y = Estimate, ymin = Es
 RASE_Gyn_plot
 
 # Export with ggsave 
-ggsave("RASE_Gyn_plot_dredge.tiff", plot = RASE_Gyn_plot, device = NULL, 
+ggsave("RASE_comp_abin_plot.tiff", plot = RASE_Gyn_plot, device = NULL, 
        path = "~/GitHub/Moose-Targets/Plots", scale = 1, width = 14, 
        height = 14, dpi = 300, limitsize = TRUE, units = "cm")
 
@@ -703,71 +774,204 @@ ggsave("RASE_Gyn_plot_dredge.tiff", plot = RASE_Gyn_plot, device = NULL,
 # Take RASE_data_NA and filter for regions
 
 ## Norrland
-RASE_data_Norrland <- RASE_data_NA %>%
+RASE_data_Norrland <- RASE_data_abin_3_point_avg %>%
   filter(LandsdelNamn %in% c("Södra Norrland", "Norra Norrland"))
 
+# Create a correlation matrix
+cor_matrix_norr <- cor(RASE_data_Norrland[, c("Älgtäthet.i.vinterstam_mean", "ungulate_index_mean", "WB1000_mean", "Roe1000_mean", "FD1000_mean", "Red1000_mean", "WB1000_mean", # Browsers
+                                              "BestHojdAbinAVG_mean", "BestandAlder_mean", "Medelbestandshojd_mean", "AndelRojt...18_mean", # Site
+                                              "AndelBordigaMarker_mean", "youngforest_area_ha_mean", "proportion_young_forest_mean", "BestHojdAbinArealV_mean", # Site
+                                              "AntalGranarHa_mean", "AntalTallarHa_mean", "AntalBjorkarHa_mean", "AntalOvrigtHa_mean", # Competitor species
+                                              "Mean_seasonal_temp[c]_imputed_mean", "Mean_seasonal_precipitation[mm]_imputed_mean","mean_seasonal_snowdepth[cm]_imputed_mean")], # Climate
+                       method = "pearson", use = "pairwise.complete.obs")
+
+# Filter correlations greater than 0.7 or less than -0.7, excluding 1
+filtered_cor_norr <- cor_matrix_norr
+filtered_cor_norr[abs(filtered_cor_norr) <= 0.7 | abs(filtered_cor_norr) == 1] <- NA
+
+# View the filtered correlation matrix
+filtered_cor_norr
+
 # Run the model
-RASE_competative_betar_N <- glmmTMB(RASEAndelGynnsam ~ scale(Älgtäthet.i.vinterstam) + scale(FD1000) + scale(WB1000) +  
-                                      scale(AntalTallarHa) + scale(AntalBjorkarHa) + 
-                                      scale(proportion_young_forest) + scale(AndelBordigaMarker) + scale(youngforest_area_ha) + scale(BestandAlder) +
-                                      scale(`mean_seasonal_snowdepth[cm]`) + scale(`Mean_seasonal_precipitation[mm]`) +
-                                      (1 | Registreri) + (1 | InvAr), 
-                                    data = RASE_data_Norrland)
+glm_RASE_comp_N <- glmmTMB(RASEAndelGynnsam_mean ~ scale(Älgtäthet.i.vinterstam_mean) +
+                                              scale(ungulate_index_mean) +
+                                              scale(AntalTallarHa_mean) +
+                                              scale(AntalBjorkarHa_mean) +
+                                              scale(AntalOvrigtHa_mean) +
+                                              scale(proportion_young_forest_mean) +
+                                              scale(BestHojdAbinArealV_mean) +
+                                              scale(`Mean_seasonal_precipitation[mm]_imputed_mean`),
+                                            family = beta_family(link = "logit"),
+                                            data = RASE_data_Norrland)
 
-summary(RASE_competative_betar_N)
-
-# Check variance inflation factor (VIF)
-vif(RASE_competative_betar_N)
+summary(glm_RASE_comp_N)
 
 # Check for over dispersal
-glm_RASE_Ha_N_simres <- simulateResiduals(RASE_competative_betar_N)
-testDispersion(glm_RASE_Ha_N_simres)
+glm_RASE_comp_N_simres <- simulateResiduals(glm_RASE_comp_N)
+testDispersion(glm_RASE_comp_N_simres)
 
-# Once happy with model type and variables Run model selection 
-options(na.action = "na.fail")  # Prevent `dredge` from failing silently due to missing data
-dredged_glm_comp_ha_N <- dredge(RASE_competative_betar_N)
-summary(dredged_glm_comp_ha_N)
+# USE step() for forwards stepwise selection
+# Fit an initial empty model
+glm_RASE_comp_null <- glmmTMB(RASEAndelGynnsam_mean ~ 1,  # Model with no predictors
+                              family = beta_family(link = "logit"),
+                              data = RASE_data_Norrland)
 
-# Select models within ΔAIC < 2 of the best model
-top_GLM_RASE <- subset(dredged_glm_comp_ha_N, delta < 2)
-summary(top_GLM_RASE)
+# Fit a forward stepwise model
+glm_RASE_comp_N_fwd <- step(glm_RASE_comp_null, 
+                          scope = list(lower = glm_RASE_comp_null, 
+                                       upper = ~ scale(Älgtäthet.i.vinterstam_mean) +
+                                         scale(ungulate_index_mean) +
+                                         scale(AntalTallarHa_mean) +
+                                         scale(AntalBjorkarHa_mean) +
+                                         scale(AntalOvrigtHa_mean) +
+                                         scale(proportion_young_forest_mean) +
+                                         scale(BestHojdAbinArealV_mean) +
+                                         scale(`Mean_seasonal_precipitation[mm]_imputed_mean`),
+                                       direction = "forward", 
+                                       trace = TRUE))
 
-# Get the best model (rank 1)
-best_glm_RASE <- get.models(dredged_glm_comp_ha_N, subset = 1)[[1]]
-summary(best_glm_RASE)
+summary(glm_RASE_comp_N_fwd)
+
+# Check for over dispersal
+glm_RASE_comp_N_simres <- simulateResiduals(glm_RASE_comp_N_fwd)
+testDispersion(glm_RASE_comp_N_simres)
 
 ## Svealand
-RASE_data_Svealand <- RASE_data_NA %>%
+RASE_data_Svealand <- RASE_data_abin_3_point_avg %>%
   filter(LandsdelNamn %in% c("Svealand"))
 
-RASE_competative_betar_S <- glmmTMB(RASEAndelGynnsam ~ scale(Älgtäthet.i.vinterstam) + scale(FD1000) + scale(WB1000) +  
-                                      scale(AntalTallarHa) + scale(AntalBjorkarHa) + 
-                                      scale(proportion_young_forest) + scale(AndelBordigaMarker) + scale(youngforest_area_ha) + scale(BestandAlder) +
-                                      scale(`mean_seasonal_snowdepth[cm]`) + scale(`Mean_seasonal_precipitation[mm]`) +
-                                      (1 | Registreri) + (1 | InvAr), 
-                                    data = RASE_data_Svealand)
+# Create a correlation matrix
+cor_matrix_svea <- cor(RASE_data_Svealand[, c("Älgtäthet.i.vinterstam_mean", "ungulate_index_mean", "WB1000_mean", "Roe1000_mean", "FD1000_mean", "Red1000_mean", "WB1000_mean", # Browsers
+                                              "BestHojdAbinAVG_mean", "BestandAlder_mean", "Medelbestandshojd_mean", "AndelRojt...18_mean", # Site
+                                              "AndelBordigaMarker_mean", "youngforest_area_ha_mean", "proportion_young_forest_mean", "BestHojdAbinArealV_mean", # Site
+                                              "AntalGranarHa_mean", "AntalTallarHa_mean", "AntalBjorkarHa_mean", "AntalOvrigtHa_mean", # Competitor species
+                                              "Mean_seasonal_temp[c]_imputed_mean", "Mean_seasonal_precipitation[mm]_imputed_mean","mean_seasonal_snowdepth[cm]_imputed_mean")], # Climate
+                       method = "pearson", use = "pairwise.complete.obs")
 
-summary(RASE_competative_betar_S)
+# Filter correlations greater than 0.7 or less than -0.7, excluding 1
+filtered_cor_svea <- cor_matrix_svea
+filtered_cor_svea[abs(filtered_cor_svea) <= 0.7 | abs(filtered_cor_svea) == 1] <- NA
+
+# View the filtered correlation matrix
+filtered_cor_svea
+
+# Run the model
+glm_RASE_comp_S <- glmmTMB(RASEAndelGynnsam_mean ~ scale(Älgtäthet.i.vinterstam_mean) +
+                             scale(ungulate_index_mean) +
+                             scale(AntalTallarHa_mean) +
+                             scale(AntalBjorkarHa_mean) +
+                             scale(AntalOvrigtHa_mean) +
+                             scale(proportion_young_forest_mean) +
+                             scale(BestHojdAbinArealV_mean) +
+                             scale(`Mean_seasonal_precipitation[mm]_imputed_mean`),
+                           family = beta_family(link = "logit"),
+                           data = RASE_data_Svealand)
+
+summary(glm_RASE_comp_S)
+
+# Check for over dispersal
+glm_RASE_comp_S_simres <- simulateResiduals(glm_RASE_comp_S)
+testDispersion(glm_RASE_comp_S_simres)
+
+# USE step() for forwards stepwise selection
+# Fit an initial empty model
+glm_RASE_comp_null <- glmmTMB(RASEAndelGynnsam_mean ~ 1,  # Model with no predictors
+                              family = beta_family(link = "logit"),
+                              data = RASE_data_Svealand)
+
+# Fit a forward stepwise model
+glm_RASE_comp_S_fwd <- step(glm_RASE_comp_null, 
+                            scope = list(lower = glm_RASE_comp_null, 
+                                         upper = ~ scale(Älgtäthet.i.vinterstam_mean) +
+                                           scale(ungulate_index_mean) +
+                                           scale(AntalTallarHa_mean) +
+                                           scale(AntalBjorkarHa_mean) +
+                                           scale(AntalOvrigtHa_mean) +
+                                           scale(proportion_young_forest_mean) +
+                                           scale(BestHojdAbinArealV_mean) +
+                                           scale(`Mean_seasonal_precipitation[mm]_imputed_mean`),
+                                         direction = "forward", 
+                                         trace = TRUE))
+
+summary(glm_RASE_comp_S_fwd)
+
+# Check for over dispersal
+glm_RASE_comp_N_simres <- simulateResiduals(glm_RASE_comp_N_fwd)
+testDispersion(glm_RASE_comp_N_simres)
+
+# Compare AIC
+AIC(glm_RASE_comp_S_fwd, glm_RASE_comp_S)
 
 ## Götaland
-RASE_data_Gotaland <- RASE_data_NA %>%
+RASE_data_Gotaland <- RASE_data_abin_3_point_avg %>%
   filter(LandsdelNamn %in% c("Götaland"))
 
-RASE_competative_betar_G <- glmmTMB(RASEAndelGynnsam ~ scale(Älgtäthet.i.vinterstam) + scale(FD1000) + scale(WB1000) +  
-                                      scale(AntalTallarHa) + scale(AntalBjorkarHa) + 
-                                      scale(proportion_young_forest) + scale(AndelBordigaMarker) + scale(youngforest_area_ha) + scale(BestandAlder) +
-                                      scale(`mean_seasonal_snowdepth[cm]`) + scale(`Mean_seasonal_precipitation[mm]`) +
-                                      (1 | Registreri) + (1 | InvAr), 
-                                    data = RASE_data_Gotaland)
+# Create a correlation matrix
+cor_matrix_gota <- cor(RASE_data_Gotaland[, c("Älgtäthet.i.vinterstam_mean", "ungulate_index_mean", "WB1000_mean", "Roe1000_mean", "FD1000_mean", "Red1000_mean", "WB1000_mean", # Browsers
+                                              "BestHojdAbinAVG_mean", "BestandAlder_mean", "Medelbestandshojd_mean", "AndelRojt...18_mean", # Site
+                                              "AndelBordigaMarker_mean", "youngforest_area_ha_mean", "proportion_young_forest_mean", "BestHojdAbinArealV_mean", # Site
+                                              "AntalGranarHa_mean", "AntalTallarHa_mean", "AntalBjorkarHa_mean", "AntalOvrigtHa_mean", # Competitor species
+                                              "Mean_seasonal_temp[c]_imputed_mean", "Mean_seasonal_precipitation[mm]_imputed_mean","mean_seasonal_snowdepth[cm]_imputed_mean")], # Climate
+                       method = "pearson", use = "pairwise.complete.obs")
 
-summary(RASE_competative_betar_G)
+# Filter correlations greater than 0.7 or less than -0.7, excluding 1
+filtered_cor_gota <- cor_matrix_gota
+filtered_cor_gota[abs(filtered_cor_gota) <= 0.7 | abs(filtered_cor_gota) == 1] <- NA
+
+# View the filtered correlation matrix
+filtered_cor_gota
+
+# Run the model
+glm_RASE_comp_G <- glmmTMB(RASEAndelGynnsam_mean ~ scale(Älgtäthet.i.vinterstam_mean) +
+                             scale(ungulate_index_mean) +
+                             scale(AntalTallarHa_mean) +
+                             scale(AntalBjorkarHa_mean) +
+                             scale(AntalOvrigtHa_mean) +
+                             scale(proportion_young_forest_mean) +
+                             scale(BestHojdAbinArealV_mean) +
+                             scale(`Mean_seasonal_precipitation[mm]_imputed_mean`),
+                           family = beta_family(link = "logit"),
+                           data = RASE_data_Gotaland)
+
+summary(glm_RASE_comp_G)
+
+# Check for over dispersal
+glm_RASE_comp_G_simres <- simulateResiduals(glm_RASE_comp_G)
+testDispersion(glm_RASE_comp_G_simres)
+
+# USE step() for forwards stepwise selection
+# Fit an initial empty model
+glm_RASE_comp_null <- glmmTMB(RASEAndelGynnsam_mean ~ 1,  # Model with no predictors
+                              family = beta_family(link = "logit"),
+                              data = RASE_data_Gotaland)
+
+# Fit a forward stepwise model
+glm_RASE_comp_G_fwd <- step(glm_RASE_comp_null, 
+                            scope = list(lower = glm_RASE_comp_null, 
+                                         upper = ~ scale(Älgtäthet.i.vinterstam_mean) +
+                                           scale(ungulate_index_mean) +
+                                           scale(AntalTallarHa_mean) +
+                                           scale(AntalBjorkarHa_mean) +
+                                           scale(AntalOvrigtHa_mean) +
+                                           scale(proportion_young_forest_mean) +
+                                           scale(BestHojdAbinArealV_mean) +
+                                           scale(`Mean_seasonal_precipitation[mm]_imputed_mean`),
+                                         direction = "forward", 
+                                         trace = TRUE))
+
+summary(glm_RASE_comp_G_fwd)
+
+# Check for over dispersal
+glm_RASE_comp_G_simres <- simulateResiduals(glm_RASE_comp_G_fwd)
+testDispersion(glm_RASE_comp_G_simres)
+
 ## Create summary table of all models ####
 
 library(insight) # needed for sjPlot
 library(sjPlot) # needed for tab_model for summary table of glmmTMB results
 
 # RASE per Ha.
-tab_model(best_glm_RASE_Ha, best_glm_RASE_Ha_N, best_glm_RASE_Ha_S, best_glm_RASE_Ha_G,
+tab_model(glm_RASE_Ha_fwd, glm_RASE_Ha_N_fwd, glm_RASE_Ha_S_fwd, glm_RASE_Ha_G_fwd,
           transform = NULL, 
           show.ci = FALSE, 
           show.se = TRUE, 
@@ -775,4 +979,15 @@ tab_model(best_glm_RASE_Ha, best_glm_RASE_Ha_N, best_glm_RASE_Ha_S, best_glm_RAS
           show.stat = TRUE,
           #show.bic = TRUE,
           #show.icc = FALSE,
-          file = "~/GitHub/Moose-Targets/Tables/RASE_Ha_5y_table.html")
+          file = "~/GitHub/Moose-Targets/Tables/RASE_Ha_abin_table.html")
+
+# RASE comp.
+tab_model(glm_RASE_comp_fwd, glm_RASE_comp_N_fwd, glm_RASE_comp_S_fwd, glm_RASE_comp_G_fwd,
+          transform = NULL, 
+          show.ci = FALSE, 
+          show.se = TRUE, 
+          show.aic = TRUE,
+          show.stat = TRUE,
+          #show.bic = TRUE,
+          #show.icc = FALSE,
+          file = "~/GitHub/Moose-Targets/Tables/RASE_comp_abin_table.html")

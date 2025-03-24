@@ -276,14 +276,15 @@ library(DHARMa)
 library(MASS)
 
 # Use gamma model (log link) as data is count-like and positively skewed
-glm_RASE_Ha <- glm(AntalRASEHa_mean ~ scale(Älgtäthet.i.vinterstam_mean) +
+glm_RASE_Ha <- glm(AntalRASEHa_mean ~ 
+                     scale(Älgtäthet.i.vinterstam_mean) +
                      scale(ungulate_index_mean) +
                      scale(AntalTallarHa_mean) +
                      scale(AntalBjorkarHa_mean) +
                      scale(AntalOvrigtHa_mean) +
-                     scale(proportion_young_forest_mean) +
+                     # scale(proportion_young_forest_mean) +
                      scale(BestHojdAbinArealV_mean) +
-                     scale(`Mean_seasonal_precipitation[mm]_imputed_mean`),
+                     scale(`mean_seasonal_snowdepth[cm]_imputed_mean`),
                    family = Gamma(link = "log"),
                    data = RASE_data_abin_3_point_avg)
 
@@ -324,14 +325,15 @@ glm_RASE_Ha_null <- glm(AntalRASEHa_mean ~ 1,  # Model with no predictors
 # Fit a forward stepwise model
 glm_RASE_Ha_fwd <- step(glm_RASE_Ha_null, 
                           scope = list(lower = glm_RASE_Ha_null, 
-                                       upper = ~ scale(Älgtäthet.i.vinterstam_mean) +
+                                       upper = ~ 
+                                         scale(Älgtäthet.i.vinterstam_mean) +
                                          scale(ungulate_index_mean) +
                                          scale(AntalTallarHa_mean) +
                                          scale(AntalBjorkarHa_mean) +
                                          scale(AntalOvrigtHa_mean) +
-                                         scale(proportion_young_forest_mean) +
+                                         # scale(proportion_young_forest_mean) +
                                          scale(BestHojdAbinArealV_mean) +
-                                         scale(`Mean_seasonal_precipitation[mm]_imputed_mean`),
+                                         scale(`mean_seasonal_snowdepth[cm]_imputed_mean`),
                                        direction = "forward", 
                                        trace = TRUE))
 
@@ -377,20 +379,19 @@ fixed_effects_glm$Significance <- dplyr::case_when(
 
 # Rename terms for plotting
 fixed_effects_glm$Term <- dplyr::recode(fixed_effects_glm$Term,
-                                       "scale(Älgtäthet.i.vinterstam_mean)" = "Moose Density",        
-                                       "scale(FD1000_mean)" = "Fallow Deer Density",
-                                       "scale(WB1000_mean)" = "Wild Boar Density",
-                                       "scale(AntalTallarHa_mean)" = "Number of Pines per Ha",
-                                       "scale(AntalBjorkarHa_mean)" = "Number of Birches per Ha",
-                                       "scale(AntalOvrigtHa_mean)" = "Number of Other Trees per Ha",
-                                       "scale(proportion_young_forest_mean)" = "Proportion Young Forest",
-                                       "scale(AndelBordigaMarker_mean)" = "Proportion on Productive Land",
-                                       "scale(youngforest_area_ha_mean)" = "Young Forest Area (Ha)",
-                                       "scale(BestandAlder_mean)" = "Stand Age",
-                                       "scale(Medelbestandshojd_mean)" = "Average Stand Height",
-                                       "scale(AndelRojt...18_mean)" = "Proportion PCT",
-                                       "scale(`mean_seasonal_snowdepth[cm]_imputed_mean`)" = "Mean Seasonal Snow Depth", 
-                                       "scale(`Mean_seasonal_precipitation[mm]_imputed_mean`)" = "Mean Winter Precipitation"
+                                        "scale(Älgtäthet.i.vinterstam_mean)" = "Moose Density",        
+                                        "scale(ungulate_index_mean)" = "Other* Deer Density",
+                                        "scale(AntalTallarHa_mean)" = "Pines Density",
+                                        "scale(AntalBjorkarHa_mean)" = "Birches Density",
+                                        "scale(AntalOvrigtHa_mean)" = "Other* Trees Density",
+                                        "scale(proportion_young_forest_mean)" = "Proportion Young Forest",
+                                        "scale(AndelBordigaMarker_mean)" = "Proportion on Productive Land",
+                                        "scale(youngforest_area_ha_mean)" = "Young Forest Area (Ha)",
+                                        "scale(BestandAlder_mean)" = "Stand Age",
+                                        "scale(Medelbestandshojd_mean)" = "Average Stand Height",
+                                        "scale(AndelRojt...18_mean)" = "Proportion PCT",
+                                        "scale(`mean_seasonal_snowdepth[cm]_imputed_mean`)" = "Seasonal Snow Depth", 
+                                        "scale(`Mean_seasonal_precipitation[mm]_imputed_mean`)" = "Mean Winter Precipitation"
 )
 
 # Plot with ggplot2
@@ -433,14 +434,15 @@ filtered_cor_norr[abs(filtered_cor_norr) <= 0.7 | abs(filtered_cor_norr) == 1] <
 filtered_cor_norr
 
 # Run the model
-glm_RASE_Ha_N <- glm(AntalRASEHa_mean ~ scale(Älgtäthet.i.vinterstam_mean) +
-                       scale(ungulate_index_mean) +
+glm_RASE_Ha_N <- glm(AntalRASEHa_mean ~ 
+                       scale(Älgtäthet.i.vinterstam_mean) +
+                       # scale(ungulate_index_mean) +
                        scale(AntalTallarHa_mean) +
                        scale(AntalBjorkarHa_mean) +
                        scale(AntalOvrigtHa_mean) +
-                       scale(proportion_young_forest_mean) +
+                       scale(AndelRojt...18_mean) +
                        scale(BestHojdAbinArealV_mean) +
-                       scale(`Mean_seasonal_precipitation[mm]_imputed_mean`),
+                       scale(`mean_seasonal_snowdepth[cm]_imputed_mean`),
                      family = Gamma(link = "log"),
                      data = RASE_data_Norrland)
 
@@ -466,14 +468,15 @@ glm_RASE_Ha_N_null <- glm(AntalRASEHa_mean ~ 1,  # Model with no predictors
 # Fit a forward stepwise model
 glm_RASE_Ha_N_fwd <- step(glm_RASE_Ha_N_null, 
                           scope = list(lower = glm_RASE_Ha_N_null, 
-                                       upper = ~ scale(Älgtäthet.i.vinterstam_mean) +
-                                         scale(ungulate_index_mean) +
+                                       upper = ~ 
+                                         scale(Älgtäthet.i.vinterstam_mean) +
+                                         # scale(ungulate_index_mean) +
                                          scale(AntalTallarHa_mean) +
                                          scale(AntalBjorkarHa_mean) +
                                          scale(AntalOvrigtHa_mean) +
-                                         scale(proportion_young_forest_mean) +
+                                         # scale(proportion_young_forest_mean) +
                                          scale(BestHojdAbinArealV_mean) +
-                                         scale(`Mean_seasonal_precipitation[mm]_imputed_mean`),
+                                         scale(`mean_seasonal_snowdepth[cm]_imputed_mean`),
                                        direction = "forward", 
                                        trace = TRUE))
 
@@ -487,7 +490,7 @@ glm_RASE_Ha_N_simres <- simulateResiduals(glm_RASE_Ha_N_fwd)
 testDispersion(glm_RASE_Ha_N_simres)
 
 # Check the AIC compared to the original model
-AIC(glm_RASE_Ha_N_fwd, glm_RASE_Ha_N)
+AIC(glm_RASE_Ha_N_fwd ,glm_RASE_Ha_N_bck, glm_RASE_Ha_N)
 
 ## Svealand
 RASE_data_Svealand <- RASE_data_abin_3_point_avg %>%
@@ -509,14 +512,15 @@ filtered_cor_svea[abs(filtered_cor_svea) <= 0.7 | abs(filtered_cor_svea) == 1] <
 filtered_cor_svea
 
 # Run the model (potentially over fitted, remove TallarHa?)
-glm_RASE_Ha_S <- glm(AntalRASEHa_mean ~ scale(Älgtäthet.i.vinterstam_mean) +
+glm_RASE_Ha_S <- glm(AntalRASEHa_mean ~ 
+                       scale(Älgtäthet.i.vinterstam_mean) +
                        scale(ungulate_index_mean) +
                        scale(AntalTallarHa_mean) +
                        scale(AntalBjorkarHa_mean) +
                        scale(AntalOvrigtHa_mean) +
-                       scale(proportion_young_forest_mean) +
+                       # scale(proportion_young_forest_mean) +
                        scale(BestHojdAbinArealV_mean) +
-                       scale(`Mean_seasonal_precipitation[mm]_imputed_mean`),
+                       scale(`mean_seasonal_snowdepth[cm]_imputed_mean`),
                      family = Gamma(link = "log"),
                      data = RASE_data_Svealand)
 
@@ -538,14 +542,15 @@ glm_RASE_Ha_S_null <- glm(AntalRASEHa_mean ~ 1,  # Model with no predictors
 # Fit a forward stepwise model
 glm_RASE_Ha_S_fwd <- step(glm_RASE_Ha_S_null, 
                           scope = list(lower = glm_RASE_Ha_S_null, 
-                                       upper = ~ scale(Älgtäthet.i.vinterstam_mean) +
+                                       upper = ~ 
+                                         scale(Älgtäthet.i.vinterstam_mean) +
                                          scale(ungulate_index_mean) +
                                          scale(AntalTallarHa_mean) +
                                          scale(AntalBjorkarHa_mean) +
                                          scale(AntalOvrigtHa_mean) +
-                                         scale(proportion_young_forest_mean) +
+                                         # scale(proportion_young_forest_mean) +
                                          scale(BestHojdAbinArealV_mean) +
-                                         scale(`Mean_seasonal_precipitation[mm]_imputed_mean`),
+                                         scale(`mean_seasonal_snowdepth[cm]_imputed_mean`),
                                        direction = "forward", 
                                        trace = TRUE))
 
@@ -581,14 +586,15 @@ filtered_cor_gota[abs(filtered_cor_gota) <= 0.7 | abs(filtered_cor_gota) == 1] <
 filtered_cor_gota
 
 # Run the model
-glm_RASE_Ha_G <- glm(AntalRASEHa_mean ~ scale(Älgtäthet.i.vinterstam_mean) +
+glm_RASE_Ha_G <- glm(AntalRASEHa_mean ~ 
+                       # scale(Älgtäthet.i.vinterstam_mean) +
                        scale(ungulate_index_mean) +
                        scale(AntalGranarHa_mean) +
                        scale(AntalBjorkarHa_mean) +
                        scale(AntalOvrigtHa_mean) +
-                       scale(proportion_young_forest_mean) +
+                       # scale(proportion_young_forest_mean) +
                        scale(BestHojdAbinArealV_mean) +
-                       scale(`Mean_seasonal_precipitation[mm]_imputed_mean`),
+                       scale(`mean_seasonal_snowdepth[cm]_imputed_mean`),
                      family = Gamma(link = "log"),
                      data = RASE_data_Gotaland)
 
@@ -611,14 +617,15 @@ glm_RASE_Ha_G_null <- glm(AntalRASEHa_mean ~ 1,  # Model with no predictors
 # Fit a forward stepwise model
 glm_RASE_Ha_G_fwd <- step(glm_RASE_Ha_G_null, 
                           scope = list(lower = glm_RASE_Ha_G_null, 
-                                       upper = ~ scale(Älgtäthet.i.vinterstam_mean) +
+                                       upper = ~ 
+                                         # scale(Älgtäthet.i.vinterstam_mean) +
                                          scale(ungulate_index_mean) +
                                          scale(AntalGranarHa_mean) +
                                          scale(AntalBjorkarHa_mean) +
                                          scale(AntalOvrigtHa_mean) +
-                                         scale(proportion_young_forest_mean) +
+                                         # scale(proportion_young_forest_mean) +
                                          scale(BestHojdAbinArealV_mean) +
-                                         scale(`Mean_seasonal_precipitation[mm]_imputed_mean`),
+                                         scale(`mean_seasonal_snowdepth[cm]_imputed_mean`),
                                        direction = "forward", 
                                        trace = TRUE))
 
@@ -645,14 +652,15 @@ library(sjPlot)
 RASE_data_abin_3_point_avg$RASEAndelGynnsam_mean <- pmax(pmin(RASE_data_abin_3_point_avg$RASEAndelGynnsam_mean, 0.9999), 0.0001)
 
 # Run the model
-glm_RASE_comp <- glmmTMB(RASEAndelGynnsam_mean ~ scale(Älgtäthet.i.vinterstam_mean) +
+glm_RASE_comp <- glmmTMB(RASEAndelGynnsam_mean ~ 
+                                    scale(Älgtäthet.i.vinterstam_mean) +
                                     scale(ungulate_index_mean) +
                                     scale(AntalTallarHa_mean) +
                                     scale(AntalBjorkarHa_mean) +
                                     scale(AntalOvrigtHa_mean) +
-                                    scale(proportion_young_forest_mean) +
+                                    # scale(proportion_young_forest_mean) +
                                     scale(BestHojdAbinArealV_mean) +
-                                    scale(`Mean_seasonal_precipitation[mm]_imputed_mean`),
+                                    scale(`mean_seasonal_snowdepth[cm]_imputed_mean`),
                                   family = beta_family(link = "logit"),
                                   data = RASE_data_abin_3_point_avg)
 
@@ -663,8 +671,8 @@ glm_RASE_comp_simres <- simulateResiduals(glm_RASE_comp)
 testDispersion(glm_RASE_comp_simres)
 
 # Check for normality of residuals
-shapiro.test(residuals(RASE_competative_betar))  # Shapiro-Wilk test
-qqnorm(residuals(RASE_competative_betar)); qqline(residuals(RASE_competative_betar), col = "red")  # Q-Q plot
+shapiro.test(residuals(glm_RASE_comp))  # Shapiro-Wilk test
+qqnorm(residuals(glm_RASE_comp)); qqline(residuals(glm_RASE_comp), col = "red")  # Q-Q plot
 
 # Backward stepwise selection
 glm_RASE_comp_bck <- step(glm_RASE_comp, direction = "backward", trace = TRUE) # same result as drop1
@@ -687,14 +695,15 @@ glm_RASE_comp_null <- glmmTMB(RASEAndelGynnsam_mean ~ 1,  # Model with no predic
 # Fit a forward stepwise model
 glm_RASE_comp_fwd <- step(glm_RASE_comp_null, 
                         scope = list(lower = glm_RASE_comp_null, 
-                                     upper = ~ scale(Älgtäthet.i.vinterstam_mean) +
+                                     upper = ~ 
+                                       scale(Älgtäthet.i.vinterstam_mean) +
                                        scale(ungulate_index_mean) +
                                        scale(AntalTallarHa_mean) +
                                        scale(AntalBjorkarHa_mean) +
                                        scale(AntalOvrigtHa_mean) +
-                                       scale(proportion_young_forest_mean) +
+                                       # scale(proportion_young_forest_mean) +
                                        scale(BestHojdAbinArealV_mean) +
-                                       scale(`Mean_seasonal_precipitation[mm]_imputed_mean`),
+                                       scale(`mean_seasonal_snowdepth[cm]_imputed_mean`),
                                      direction = "forward", 
                                      trace = TRUE))
 
@@ -737,11 +746,10 @@ fixed_effects_glm$Significance <- case_when(
 # Rename terms using recode (without !!!)
 fixed_effects_glm$Term <- dplyr::recode(fixed_effects_glm$Term,
                                         "scale(Älgtäthet.i.vinterstam_mean)" = "Moose Density",        
-                                        "scale(FD1000_mean)" = "Fallow Deer Density",
-                                        "scale(WB1000_mean)" = "Wild Boar Density",
-                                        "scale(AntalTallarHa_mean)" = "Number of Pines per Ha",
-                                        "scale(AntalBjorkarHa_mean)" = "Number of Birches per Ha",
-                                        "scale(AntalOvrigtHa_mean)" = "Number of Other Trees per Ha",
+                                        "scale(ungulate_index_mean)" = "Other* Deer Density",
+                                        "scale(AntalTallarHa_mean)" = "Pines Density",
+                                        "scale(AntalBjorkarHa_mean)" = "Birches Density",
+                                        "scale(AntalOvrigtHa_mean)" = "Other* Trees Density",
                                         "scale(proportion_young_forest_mean)" = "Proportion Young Forest",
                                         "scale(AndelBordigaMarker_mean)" = "Proportion on Productive Land",
                                         "scale(youngforest_area_ha_mean)" = "Young Forest Area (Ha)",
@@ -793,14 +801,15 @@ filtered_cor_norr[abs(filtered_cor_norr) <= 0.7 | abs(filtered_cor_norr) == 1] <
 filtered_cor_norr
 
 # Run the model
-glm_RASE_comp_N <- glmmTMB(RASEAndelGynnsam_mean ~ scale(Älgtäthet.i.vinterstam_mean) +
-                                              scale(ungulate_index_mean) +
+glm_RASE_comp_N <- glmmTMB(RASEAndelGynnsam_mean ~ 
+                                              scale(Älgtäthet.i.vinterstam_mean) +
+                                              # scale(ungulate_index_mean) +
                                               scale(AntalTallarHa_mean) +
                                               scale(AntalBjorkarHa_mean) +
                                               scale(AntalOvrigtHa_mean) +
-                                              scale(proportion_young_forest_mean) +
+                                              # scale(proportion_young_forest_mean) +
                                               scale(BestHojdAbinArealV_mean) +
-                                              scale(`Mean_seasonal_precipitation[mm]_imputed_mean`),
+                                              scale(`mean_seasonal_snowdepth[cm]_imputed_mean`),
                                             family = beta_family(link = "logit"),
                                             data = RASE_data_Norrland)
 
@@ -819,14 +828,15 @@ glm_RASE_comp_null <- glmmTMB(RASEAndelGynnsam_mean ~ 1,  # Model with no predic
 # Fit a forward stepwise model
 glm_RASE_comp_N_fwd <- step(glm_RASE_comp_null, 
                           scope = list(lower = glm_RASE_comp_null, 
-                                       upper = ~ scale(Älgtäthet.i.vinterstam_mean) +
-                                         scale(ungulate_index_mean) +
+                                       upper = ~ 
+                                         scale(Älgtäthet.i.vinterstam_mean) +
+                                         # scale(ungulate_index_mean) +
                                          scale(AntalTallarHa_mean) +
                                          scale(AntalBjorkarHa_mean) +
                                          scale(AntalOvrigtHa_mean) +
-                                         scale(proportion_young_forest_mean) +
+                                         # scale(proportion_young_forest_mean) +
                                          scale(BestHojdAbinArealV_mean) +
-                                         scale(`Mean_seasonal_precipitation[mm]_imputed_mean`),
+                                         scale(`mean_seasonal_snowdepth[cm]_imputed_mean`),
                                        direction = "forward", 
                                        trace = TRUE))
 
@@ -856,14 +866,15 @@ filtered_cor_svea[abs(filtered_cor_svea) <= 0.7 | abs(filtered_cor_svea) == 1] <
 filtered_cor_svea
 
 # Run the model
-glm_RASE_comp_S <- glmmTMB(RASEAndelGynnsam_mean ~ scale(Älgtäthet.i.vinterstam_mean) +
+glm_RASE_comp_S <- glmmTMB(RASEAndelGynnsam_mean ~ 
+                             scale(Älgtäthet.i.vinterstam_mean) +
                              scale(ungulate_index_mean) +
                              scale(AntalTallarHa_mean) +
                              scale(AntalBjorkarHa_mean) +
                              scale(AntalOvrigtHa_mean) +
-                             scale(proportion_young_forest_mean) +
+                             # scale(proportion_young_forest_mean) +
                              scale(BestHojdAbinArealV_mean) +
-                             scale(`Mean_seasonal_precipitation[mm]_imputed_mean`),
+                             scale(`mean_seasonal_snowdepth[cm]_imputed_mean`),
                            family = beta_family(link = "logit"),
                            data = RASE_data_Svealand)
 
@@ -882,14 +893,15 @@ glm_RASE_comp_null <- glmmTMB(RASEAndelGynnsam_mean ~ 1,  # Model with no predic
 # Fit a forward stepwise model
 glm_RASE_comp_S_fwd <- step(glm_RASE_comp_null, 
                             scope = list(lower = glm_RASE_comp_null, 
-                                         upper = ~ scale(Älgtäthet.i.vinterstam_mean) +
+                                         upper = ~ 
+                                           scale(Älgtäthet.i.vinterstam_mean) +
                                            scale(ungulate_index_mean) +
                                            scale(AntalTallarHa_mean) +
                                            scale(AntalBjorkarHa_mean) +
                                            scale(AntalOvrigtHa_mean) +
-                                           scale(proportion_young_forest_mean) +
+                                           # scale(proportion_young_forest_mean) +
                                            scale(BestHojdAbinArealV_mean) +
-                                           scale(`Mean_seasonal_precipitation[mm]_imputed_mean`),
+                                           scale(`mean_seasonal_snowdepth[cm]_imputed_mean`),
                                          direction = "forward", 
                                          trace = TRUE))
 
@@ -922,14 +934,15 @@ filtered_cor_gota[abs(filtered_cor_gota) <= 0.7 | abs(filtered_cor_gota) == 1] <
 filtered_cor_gota
 
 # Run the model
-glm_RASE_comp_G <- glmmTMB(RASEAndelGynnsam_mean ~ scale(Älgtäthet.i.vinterstam_mean) +
+glm_RASE_comp_G <- glmmTMB(RASEAndelGynnsam_mean ~ 
+                             # scale(Älgtäthet.i.vinterstam_mean) +
                              scale(ungulate_index_mean) +
-                             scale(AntalTallarHa_mean) +
+                             scale(AntalGranarHa_mean) +
                              scale(AntalBjorkarHa_mean) +
                              scale(AntalOvrigtHa_mean) +
-                             scale(proportion_young_forest_mean) +
+                             # scale(proportion_young_forest_mean) +
                              scale(BestHojdAbinArealV_mean) +
-                             scale(`Mean_seasonal_precipitation[mm]_imputed_mean`),
+                             scale(`mean_seasonal_snowdepth[cm]_imputed_mean`),
                            family = beta_family(link = "logit"),
                            data = RASE_data_Gotaland)
 
@@ -948,14 +961,15 @@ glm_RASE_comp_null <- glmmTMB(RASEAndelGynnsam_mean ~ 1,  # Model with no predic
 # Fit a forward stepwise model
 glm_RASE_comp_G_fwd <- step(glm_RASE_comp_null, 
                             scope = list(lower = glm_RASE_comp_null, 
-                                         upper = ~ scale(Älgtäthet.i.vinterstam_mean) +
+                                         upper = ~ 
+                                           # scale(Älgtäthet.i.vinterstam_mean) +
                                            scale(ungulate_index_mean) +
-                                           scale(AntalTallarHa_mean) +
+                                           scale(AntalGranarHa_mean) +
                                            scale(AntalBjorkarHa_mean) +
                                            scale(AntalOvrigtHa_mean) +
-                                           scale(proportion_young_forest_mean) +
+                                           # scale(proportion_young_forest_mean) +
                                            scale(BestHojdAbinArealV_mean) +
-                                           scale(`Mean_seasonal_precipitation[mm]_imputed_mean`),
+                                           scale(`mean_seasonal_snowdepth[cm]_imputed_mean`),
                                          direction = "forward", 
                                          trace = TRUE))
 
@@ -965,6 +979,8 @@ summary(glm_RASE_comp_G_fwd)
 glm_RASE_comp_G_simres <- simulateResiduals(glm_RASE_comp_G_fwd)
 testDispersion(glm_RASE_comp_G_simres)
 
+## RASE at competitive height percent change national ####
+code
 ## Create summary table of all models ####
 
 library(insight) # needed for sjPlot

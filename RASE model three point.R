@@ -275,6 +275,9 @@ library(car)
 library(DHARMa)
 library(MASS)
 
+# Read "Predictors of browsing damage on commercial forests – A study linking 
+# nationwide management data" Pfeffer et al. 2021
+
 # Use gamma model (log link) as data is count-like and positively skewed
 glm_RASE_Ha <- glm(AntalRASEHa_mean ~ 
                      scale(Älgtäthet.i.vinterstam_mean) +
@@ -980,7 +983,7 @@ glm_RASE_comp_G_simres <- simulateResiduals(glm_RASE_comp_G_fwd)
 testDispersion(glm_RASE_comp_G_simres)
 
 ## RASE at competitive height percent change national ####
-code
+code 
 ## Create summary table of all models ####
 
 library(insight) # needed for sjPlot

@@ -269,7 +269,7 @@ summary(glm_RASE_Ha)
 # Check variance inflation factor (VIF)
 vif(glm_RASE_Ha)
 
-# Check for over dispersal
+# Check for over dispersion
 glm_RASE_Ha_simres <- simulateResiduals(glm_RASE_Ha)
 testDispersion(glm_RASE_Ha_simres)
 
@@ -284,7 +284,7 @@ summary(glm_RASE_Ha_bck)
 # Check variance inflation factor (VIF)
 vif(glm_RASE_Ha_bck)
 
-# Check for over dispersal
+# Check for over dispersion
 bck_glm_RASE_Ha_simres <- simulateResiduals(glm_RASE_Ha_bck)
 testDispersion(bck_glm_RASE_Ha_simres)
 
@@ -317,7 +317,7 @@ summary(glm_RASE_Ha_fwd)
 # Check variance inflation factor (VIF)
 vif(glm_RASE_Ha_fwd)
 
-# Check for over dispersal
+# Check for over dispersion
 fwd_glm_RASE_Ha_simres <- simulateResiduals(glm_RASE_Ha_fwd)
 testDispersion(fwd_glm_RASE_Ha_simres)
 
@@ -425,7 +425,7 @@ summary(glm_RASE_Ha_N)
 # Check variance inflation factor (VIF)
 vif(glm_RASE_Ha_N)
 
-# Check for over dispersal
+# Check for over dispersion
 glm_RASE_Ha_N_simres <- simulateResiduals(glm_RASE_Ha_N)
 testDispersion(glm_RASE_Ha_N_simres)
 
@@ -458,7 +458,7 @@ summary(glm_RASE_Ha_N_fwd)
 # Check variance inflation factor (VIF)
 vif(glm_RASE_Ha_N_fwd)
 
-# Check for over dispersal
+# Check for over dispersion
 glm_RASE_Ha_N_simres <- simulateResiduals(glm_RASE_Ha_N_fwd)
 testDispersion(glm_RASE_Ha_N_simres)
 
@@ -501,7 +501,7 @@ summary(glm_RASE_Ha_S)
 # Check variance inflation factor (VIF)
 vif(glm_RASE_Ha_S)
 
-# Check for over dispersal
+# Check for over dispersion
 glm_RASE_Ha_S_simres <- simulateResiduals(glm_RASE_Ha_S)
 testDispersion(glm_RASE_Ha_S_simres)
 
@@ -530,7 +530,7 @@ summary(glm_RASE_Ha_S_fwd)
 # Check variance inflation factor (VIF)
 vif(glm_RASE_Ha_S_fwd)
 
-# Check for over dispersal
+# Check for over dispersion
 glm_RASE_Ha_S_simres <- simulateResiduals(glm_RASE_Ha_S_fwd)
 testDispersion(glm_RASE_Ha_S_simres)
 
@@ -574,7 +574,7 @@ summary(glm_RASE_Ha_G)
 # Check variance inflation factor (VIF)
 vif(glm_RASE_Ha_G)
 
-# Check for over dispersal
+# Check for over dispersion
 glm_RASE_Ha_G_simres <- simulateResiduals(glm_RASE_Ha_G)
 testDispersion(glm_RASE_Ha_G_simres)
 
@@ -603,7 +603,7 @@ summary(glm_RASE_Ha_G_fwd)
 # Check variance inflation factor (VIF)
 vif(glm_RASE_Ha_G_fwd)
 
-# Check for over dispersal
+# Check for over dispersion
 glm_RASE_Ha_G_simres <- simulateResiduals(glm_RASE_Ha_G_fwd)
 testDispersion(glm_RASE_Ha_G_simres)
 
@@ -634,7 +634,7 @@ glm_RASE_comp <- glmmTMB(RASEAndelGynnsam_mean ~
 
 summary(glm_RASE_comp)
 
-# Check for over dispersal
+# Check for over dispersion
 glm_RASE_comp_simres <- simulateResiduals(glm_RASE_comp)
 testDispersion(glm_RASE_comp_simres)
 
@@ -646,7 +646,7 @@ qqnorm(residuals(glm_RASE_comp)); qqline(residuals(glm_RASE_comp), col = "red") 
 glm_RASE_comp_bck <- step(glm_RASE_comp, direction = "backward", trace = TRUE) # same result as drop1
 summary(glm_RASE_comp_bck)
 
-# Check for over dispersal
+# Check for over dispersion
 bck_glm_RASE_comp_simres <- simulateResiduals(glm_RASE_comp_bck)
 testDispersion(bck_glm_RASE_comp_simres)
 
@@ -677,7 +677,7 @@ glm_RASE_comp_fwd <- step(glm_RASE_comp_null,
 summary(glm_RASE_comp_fwd)
 
 
-# Check for over dispersal
+# Check for over dispersion
 fwd_glm_RASE_comp_simres <- simulateResiduals(glm_RASE_comp_fwd)
 testDispersion(fwd_glm_RASE_comp_simres)
 
@@ -781,7 +781,7 @@ glm_RASE_comp_N <- glmmTMB(RASEAndelGynnsam_mean ~
 
 summary(glm_RASE_comp_N)
 
-# Check for over dispersal
+# Check for over dispersion
 glm_RASE_comp_N_simres <- simulateResiduals(glm_RASE_comp_N)
 testDispersion(glm_RASE_comp_N_simres)
 
@@ -807,7 +807,7 @@ glm_RASE_comp_N_fwd <- step(glm_RASE_comp_null,
 
 summary(glm_RASE_comp_N_fwd)
 
-# Check for over dispersal
+# Check for over dispersion
 glm_RASE_comp_N_simres <- simulateResiduals(glm_RASE_comp_N_fwd)
 testDispersion(glm_RASE_comp_N_simres)
 
@@ -844,7 +844,7 @@ glm_RASE_comp_S <- glmmTMB(RASEAndelGynnsam_mean ~
 
 summary(glm_RASE_comp_S)
 
-# Check for over dispersal
+# Check for over dispersion
 glm_RASE_comp_S_simres <- simulateResiduals(glm_RASE_comp_S)
 testDispersion(glm_RASE_comp_S_simres)
 
@@ -870,7 +870,7 @@ glm_RASE_comp_S_fwd <- step(glm_RASE_comp_null,
 
 summary(glm_RASE_comp_S_fwd)
 
-# Check for over dispersal
+# Check for over dispersion
 glm_RASE_comp_N_simres <- simulateResiduals(glm_RASE_comp_N_fwd)
 testDispersion(glm_RASE_comp_N_simres)
 
@@ -910,7 +910,7 @@ glm_RASE_comp_G <- glmmTMB(RASEAndelGynnsam_mean ~
 
 summary(glm_RASE_comp_G)
 
-# Check for over dispersal
+# Check for over dispersion
 glm_RASE_comp_G_simres <- simulateResiduals(glm_RASE_comp_G)
 testDispersion(glm_RASE_comp_G_simres)
 
@@ -936,13 +936,160 @@ glm_RASE_comp_G_fwd <- step(glm_RASE_comp_null,
 
 summary(glm_RASE_comp_G_fwd)
 
-# Check for over dispersal
+# Check for over dispersion
 glm_RASE_comp_G_simres <- simulateResiduals(glm_RASE_comp_G_fwd)
 testDispersion(glm_RASE_comp_G_simres)
 
-## RASE at competitive height percent change national ####
+## RASE competitive change calc ####
 
-code
+# Remove rows with NA values
+RASE_data_NA <- na.omit(RASE_data)
+
+# Calculate 3-point averages for 2020-2024
+RASE_data_last_3_point_avg <- RASE_data_NA %>%
+  filter(InvAr >= 2020 & InvAr <= 2024) %>%
+  group_by(Registreri, LandsdelNamn, LanNamn) %>%
+  arrange(Registreri, desc(InvAr)) %>%
+  slice_head(n = 3) %>%
+  summarise(across(where(is.numeric) & !any_of("InvAr"), list(mean = ~mean(.x, na.rm = TRUE),
+                                                              sd = ~sd(.x, na.rm = TRUE))),
+            years_used = paste(InvAr, collapse = ", ")) %>%
+  ungroup()
+
+# Calculate 3-point averages for 2015-2019
+RASE_data_first_3_point_avg <- RASE_data_NA %>%
+  filter(InvAr >= 2015 & InvAr <= 2019) %>%
+  group_by(Registreri, LandsdelNamn, LanNamn) %>%
+  arrange(Registreri, InvAr) %>%
+  slice_head(n = 3) %>%
+  summarise(across(where(is.numeric) & !any_of("InvAr"), list(mean = ~mean(.x, na.rm = TRUE),
+                                                              sd = ~sd(.x, na.rm = TRUE))),
+            years_used = paste(InvAr, collapse = ", ")) %>%
+  ungroup()
+
+# Merge datasets
+RASE_data_change <- RASE_data_last_3_point_avg %>%
+  left_join(RASE_data_first_3_point_avg, by = c("Registreri", "LandsdelNamn", "LanNamn"),
+            suffix = c("_2020_2024", "_2015_2019")) %>%
+  mutate(
+    first_year_2024 = as.numeric(substr(years_used_2020_2024, 1, 4)),
+    last_year_2024 = as.numeric(substr(years_used_2020_2024, nchar(years_used_2020_2024) - 3, nchar(years_used_2020_2024))),
+    first_year_2019 = as.numeric(substr(years_used_2015_2019, 1, 4)),
+    last_year_2019 = as.numeric(substr(years_used_2015_2019, nchar(years_used_2015_2019) - 3, nchar(years_used_2015_2019))),
+    midpoint_year_2024 = (first_year_2024 + last_year_2024) / 2,
+    midpoint_year_2019 = (first_year_2019 + last_year_2019) / 2,
+    year_diff = midpoint_year_2024 - midpoint_year_2019
+  )
+
+
+RASE_data_change <- RASE_data_change %>%
+  mutate(
+    # Calculate absolute change
+    across(contains("mean_2015_2019"),
+           ~ (RASE_data_change[[sub("_2015_2019", "_2020_2024", cur_column())]] - .),
+           .names = "abs_change_{.col}"),
+    
+    # Calculate yearly absolute change
+    across(starts_with("abs_change"), ~ . / year_diff, .names = "yrly_{.col}")
+  ) %>%
+  rename_with(~ sub("_mean_2015_2019", "", .), starts_with("abs_change")) %>%
+  rename_with(~ sub("_mean_2015_2019", "", .), starts_with("yrly_abs_change"))
+
+RASE_data_change <- RASE_data_change %>%
+  mutate(
+    # Calculate percentage change
+    across(contains("mean_2015_2019"),
+           ~ 100 * (RASE_data_change[[sub("_2015_2019", "_2020_2024", cur_column())]] - .) / .,
+           .names = "pct_{.col}"),
+    
+    # Calculate yearly percentage change
+    across(starts_with("pct_"), ~ . / year_diff, .names = "yrly_{.col}")
+  ) %>%
+  rename_with(~ sub("_mean_2015_2019", "", .), starts_with("pct_")) %>%
+  rename_with(~ sub("_mean_2015_2019", "", .), starts_with("yrly_"))
+
+# Remove infinite and NaN values
+RASE_data_change <- RASE_data_change %>%
+  mutate(across(everything(), ~ ifelse(is.infinite(.), NA, .))) %>%
+  mutate(across(everything(), ~ ifelse(is.nan(.), NA, .)))
+
+# Filter change data so that it only includes relvant varialbes 
+RASE_data_change <- RASE_data_change %>%
+  dplyr::select(yrly_pct_RASEAndelGynnsam, 
+         yrly_pct_Älgtäthet.i.vinterstam, 
+         yrly_pct_ungulate_index, 
+         yrly_pct_AntalTallarHa,
+         yrly_pct_AntalGranarHa,
+         yrly_pct_AntalBjorkarHa, 
+         yrly_pct_AndelRojt...18, 
+         yrly_pct_proportion_young_forest)
+
+## RASE at competitive height percent change national #### 
+library(dplyr)
+library(lme4)
+library(MuMIn)
+library(ggplot2)
+library(car)
+library(DHARMa)
+library(MASS)
+
+# Remove rows with NA values from RASE_data_change
+RASE_data_change <- na.omit(RASE_data_change)
+
+# Run the model
+glm_RASE_comp_chg <- glm(yrly_pct_RASEAndelGynnsam ~ 
+                           scale(yrly_pct_Älgtäthet.i.vinterstam) +
+                           scale(yrly_pct_ungulate_index) +
+                           scale(yrly_pct_AntalTallarHa) +
+                           scale(yrly_pct_AntalBjorkarHa) +
+                           scale(yrly_pct_AndelRojt...18) +
+                           scale(yrly_pct_proportion_young_forest),
+                         family = gaussian(link = "identity"),
+                         data = RASE_data_change)
+
+summary(glm_RASE_comp_chg)
+
+# Check for over dispersion
+glm_RASE_comp_chg_simres <- simulateResiduals(glm_RASE_comp_chg)
+testDispersion(glm_RASE_comp_chg_simres)
+
+# Check for normality of residuals (less imprtant is not over-dispersed)
+shapiro.test(residuals(glm_RASE_comp_chg))  # Shapiro-Wilk test
+qqnorm(residuals(glm_RASE_comp_chg)); qqline(residuals(glm_RASE_comp_chg), col = "red")  # Q-Q plot
+
+# Backward stepwise selection
+glm_RASE_comp_chg_bck <- step(glm_RASE_comp_chg, direction = "backward", trace = TRUE) # same result as drop1
+summary(glm_RASE_comp_chg_bck)
+
+# Check for over dispersion
+bck_glm_RASE_comp_chg_simres <- simulateResiduals(glm_RASE_comp_chg_bck)
+testDispersion(bck_glm_RASE_comp_chg_simres)
+
+# Check for normality of residuals
+shapiro.test(residuals(glm_RASE_comp_chg_bck))  # Shapiro-Wilk test
+qqnorm(residuals(glm_RASE_comp_chg_bck)); qqline(residuals(glm_RASE_comp_chg_bck), col = "red")  # Q-Q plot
+
+# USE step() for forwards stepwise selection
+# Fit an initial empty model
+glm_RASE_comp_chg_null <- glm(yrly_pct_RASEAndelGynnsam ~ 1,  # Model with no predictors
+                              family = gaussian(link = "identity"),
+                              data = RASE_data_change)
+
+# Fit a forward stepwise model
+glm_RASE_comp_chg_fwd <- step(glm_RASE_comp_chg_null, 
+                          scope = list(lower = glm_RASE_comp_chg_null, 
+                                       upper = ~ 
+                                         scale(yrly_pct_Älgtäthet.i.vinterstam) +
+                                         scale(yrly_pct_ungulate_index) +
+                                         scale(yrly_pct_AntalTallarHa) +
+                                         scale(yrly_pct_AntalBjorkarHa) +
+                                         scale(yrly_pct_AndelRojt...18) +
+                                         scale(yrly_pct_proportion_young_forest),
+                                       direction = "forward", 
+                                       trace = TRUE))
+
+summary(glm_RASE_comp_chg_fwd)
+
 
 ## Create summary table of all models ####
 
@@ -962,6 +1109,17 @@ tab_model(glm_RASE_Ha_fwd, glm_RASE_Ha_N_fwd, glm_RASE_Ha_S_fwd, glm_RASE_Ha_G_f
 
 # RASE comp.
 tab_model(glm_RASE_comp_fwd, glm_RASE_comp_N_fwd, glm_RASE_comp_S_fwd, glm_RASE_comp_G_fwd,
+          transform = NULL, 
+          show.ci = FALSE, 
+          show.se = TRUE, 
+          show.aic = TRUE,
+          show.stat = TRUE,
+          #show.bic = TRUE,
+          #show.icc = FALSE,
+          file = "~/GitHub/Moose-Targets/Tables/RASE_comp_abin_table.html")
+
+# Change in RASE comp.
+tab_model(glm_RASE_comp_chg_fwd, glm_RASE_comp_chg_N_fwd, glm_RASE_comp_chg_S_fwd, glm_RASE_comp_chg_G_fwd,
           transform = NULL, 
           show.ci = FALSE, 
           show.se = TRUE, 

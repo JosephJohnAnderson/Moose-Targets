@@ -134,15 +134,15 @@ AFO_joined <- AFO_shp %>%
 RASEperHa <- tm_shape(AFO_joined) +
   tm_graticules(alpha=0.3, n.x=3, n.y=6) +
   tm_fill("AntalRASEHa", textNA = "NA", colorNA="#999999", title="", 
-          palette=c("#c7eae5", "#80cdc1", "#35978f", "#01665e", "#003c30"), 
+          palette=c("#F11B00", "#E98905", "#DACA50", "#99BDAD", "#3A9AB2"), 
           breaks = c(0, 200, 400, 10000), 
           labels = c("< 200", "200 – 400", "> 400")) +
   tm_borders(col="black", lwd=1.5) +    #lwd=1
   tm_layout(main.title = "RASE stems per ha. 2022/24", title.size = 1.2, legend.text.size = 1.0) +
   tm_shape(AFO_joined) + 
   tm_fill("Registreri", palette = c("white", "white", "white"), alpha=0, legend.show=FALSE) +    
-  tm_borders(col="black", lwd=1.5) +      #lwd=2
-  tm_scale_bar(position=c("right", "bottom")) 
+  tm_borders(col="black", lwd=1.5)      #lwd=2
+  # tm_scale_bar(position=c("right", "bottom")) 
 
 RASEperHa
 

@@ -132,17 +132,22 @@ AFO_joined <- AFO_shp %>%
 
 # Plot with tmap
 RASEperHa <- tm_shape(AFO_joined) +
-  tm_graticules(alpha=0.3, n.x=3, n.y=6) +
-  tm_fill("AntalRASEHa", textNA = "NA", colorNA="#999999", title="", 
-          palette=c("#F11B00", "#E98905", "#DACA50", "#99BDAD", "#3A9AB2"), 
-          breaks = c(0, 200, 400, 10000), 
-          labels = c("< 200", "200 – 400", "> 400")) +
-  tm_borders(col="black", lwd=1.5) +    #lwd=1
-  tm_layout(main.title = "RASE stems per ha. 2022/24", title.size = 1.2, legend.text.size = 1.0) +
-  tm_shape(AFO_joined) + 
-  tm_fill("Registreri", palette = c("white", "white", "white"), alpha=0, legend.show=FALSE) +    
-  tm_borders(col="black", lwd=1.5)      #lwd=2
-  # tm_scale_bar(position=c("right", "bottom")) 
+  tm_graticules(alpha = 0.3, n.x = 3, n.y = 6) +
+  tm_fill("AntalRASEHa", fill.scale = tm_scale(
+      values = c("#d7191c", "#fdae61", "#ffffbf", "#abd9e9", "#2c7bb6"),
+      breaks = c(0, 200, 400, 10000),
+      label.na = "NA",
+      value.na = "grey",
+      labels = c("< 200", "200 – 400", "> 400") ),fill.legend = tm_legend(title = "")) +
+  tm_borders(col = "black", lwd = 1.5) +
+  tm_title("RASE stems per ha. 2022/24", size = 1.0) +
+  tm_shape(AFO_joined) +
+  tm_fill(
+    "Registreri",
+    fill.scale = tm_scale(values = c("white", "white", "white")),
+    fill_alpha = 0,
+    fill.legend = tm_legend_hide()) +
+  tm_borders(col = "black", lwd = 1.5)
 
 RASEperHa
 

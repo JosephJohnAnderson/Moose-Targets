@@ -212,7 +212,7 @@ RASE_data_abin_3_point_avg <- RASE_data_NA %>%
   filter(InvAr >= 2018 & InvAr <= 2024) %>%  # Keep only relevant years
   group_by(Registreri, LandsdelNamn, LanNamn) %>%
   arrange(Registreri, desc(InvAr)) %>%  # Sort in descending order
-  slice_head(n = 3) %>%  # Select earliest 3 years within range
+  slice_head(n = 3) %>%  # Select latest 3 years within range
   summarise(
     across(where(is.numeric) & !all_of("InvAr"), list(mean = ~mean(.x, na.rm = TRUE),
                                                       sd = ~sd(.x, na.rm = TRUE))),

@@ -1015,7 +1015,8 @@ RASE_data_change <- RASE_data_change %>%
 
 # Filter change data so that it only includes relvant varialbes 
 RASE_data_change <- RASE_data_change %>%
-  dplyr::select(yrly_pct_RASEAndelGynnsam, 
+  dplyr::select(LandsdelNamn, LanNamn, Registreri,
+         yrly_pct_RASEAndelGynnsam, 
          yrly_pct_Älgtäthet.i.vinterstam, 
          yrly_pct_ungulate_index, 
          yrly_pct_AntalTallarHa,
@@ -1023,6 +1024,20 @@ RASE_data_change <- RASE_data_change %>%
          yrly_pct_AntalBjorkarHa, 
          yrly_pct_AndelRojt...18, 
          yrly_pct_proportion_young_forest)
+
+# Create a correlation matrix
+cor_matrix_change <- cor(RASE_data_change[, c("yrly_pct_Älgtäthet.i.vinterstam", "yrly_pct_ungulate_index", # Browsers
+                                              "yrly_pct_proportion_young_forest", "yrly_pct_AndelRojt...18", # Site
+                                              "yrly_pct_AntalGranarHa", "yrly_pct_AntalTallarHa", "yrly_pct_AntalBjorkarHa")], # Competitor species
+                         method = "pearson", use = "pairwise.complete.obs")
+
+# Filter correlations greater than 0.7 or less than -0.7, excluding 1
+filtered_cor_change <- cor_matrix_change
+filtered_cor_change[abs(filtered_cor_change) <= 0.7 | abs(filtered_cor_change) == 1] <- NA
+
+# View the filtered correlation matrix
+filtered_cor_change
+
 
 ## RASE at competitive height percent change national #### 
 library(dplyr)
@@ -1090,6 +1105,191 @@ glm_RASE_comp_chg_fwd <- step(glm_RASE_comp_chg_null,
 
 summary(glm_RASE_comp_chg_fwd)
 
+# Compare AIC of all model
+AIC(glm_RASE_comp_chg, glm_RASE_comp_chg_fwd, glm_RASE_comp_chg_bck)
+
+## RASE at competitive height percent change regions ####
+
+# Remove rows with NA values from RASE_data_change
+RASE_data_change <- na.omit(RASE_data_change)
+
+# Take RASE_data_change and filter for regions
+## Norrland
+RASE_change_Norrland <- RASE_data_change %>%
+  filter(LandsdelNamn %in% c("Södra Norrland", "Norra Norrland"))
+
+# Create a correlation matrix
+cor_matrix_change_N <- cor(RASE_change_Norrland[, c("yrly_pct_Älgtäthet.i.vinterstam", "yrly_pct_ungulate_index", # Browsers
+                                              "yrly_pct_proportion_young_forest", "yrly_pct_AndelRojt...18", # Site
+                                              "yrly_pct_AntalGranarHa", "yrly_pct_AntalTallarHa", "yrly_pct_AntalBjorkarHa")], # Competitor species
+                         method = "pearson", use = "pairwise.complete.obs")
+
+# Filter correlations greater than 0.7 or less than -0.7, excluding 1
+filtered_cor_change_N <- cor_matrix_change_N
+filtered_cor_change_N[abs(filtered_cor_change_N) <= 0.7 | abs(filtered_cor_change_N) == 1] <- NA
+
+# View the filtered correlation matrix
+filtered_cor_change_N
+
+# Run the model
+glm_RASE_comp_chg_N <- glm(yrly_pct_RASEAndelGynnsam ~ 
+                             scale(yrly_pct_Älgtäthet.i.vinterstam) +
+                             scale(yrly_pct_ungulate_index) +
+                             scale(yrly_pct_AntalTallarHa) +
+                             scale(yrly_pct_AntalBjorkarHa) +
+                             scale(yrly_pct_AndelRojt...18) +
+                             scale(yrly_pct_proportion_young_forest),
+                           family = gaussian(link = "identity"),
+                           data = RASE_change_Norrland)
+
+summary(glm_RASE_comp_chg_N)
+
+# Check for over dispersion
+glm_RASE_comp_chg_N_simres <- simulateResiduals(glm_RASE_comp_chg_N)
+testDispersion(glm_RASE_comp_chg_N_simres)
+
+# USE step() for forwards stepwise selection
+# Fit an initial empty model
+glm_RASE_comp_chg_N_null <- glm(yrly_pct_RASEAndelGynnsam ~ 1,  # Model with no predictors
+                              family = gaussian(link = "identity"),
+                              data = RASE_change_Norrland)
+
+# Fit a forward stepwise model
+glm_RASE_comp_chg_N_fwd <- step(glm_RASE_comp_chg_N_null, 
+                            scope = list(lower = glm_RASE_comp_chg_N_null, 
+                                         upper = ~ 
+                                           scale(yrly_pct_Älgtäthet.i.vinterstam) +
+                                           scale(yrly_pct_ungulate_index) +
+                                           scale(yrly_pct_AntalTallarHa) +
+                                           scale(yrly_pct_AntalBjorkarHa) +
+                                           scale(yrly_pct_AndelRojt...18) +
+                                           scale(yrly_pct_proportion_young_forest),
+                                         direction = "forward", 
+                                         trace = TRUE))
+
+summary(glm_RASE_comp_chg_N_fwd)
+
+# Check for over dispersion
+glm_RASE_comp_chg_N_simres <- simulateResiduals(glm_RASE_comp_chg_N_fwd)
+testDispersion(glm_RASE_comp_chg_N_simres)
+
+## Svealand
+RASE_change_Svealand <- RASE_data_change %>%
+  filter(LandsdelNamn %in% c("Svealand"))
+
+# Create a correlation matrix
+cor_matrix_change_S <- cor(RASE_change_Svealand[, c("yrly_pct_Älgtäthet.i.vinterstam", "yrly_pct_ungulate_index", # Browsers
+                                                    "yrly_pct_proportion_young_forest", "yrly_pct_AndelRojt...18", # Site
+                                                    "yrly_pct_AntalGranarHa", "yrly_pct_AntalTallarHa", "yrly_pct_AntalBjorkarHa")], # Competitor species
+                           method = "pearson", use = "pairwise.complete.obs")
+
+# Filter correlations greater than 0.7 or less than -0.7, excluding 1
+filtered_cor_change_S <- cor_matrix_change_S
+filtered_cor_change_S[abs(filtered_cor_change_S) <= 0.7 | abs(filtered_cor_change_S) == 1] <- NA
+
+# View the filtered correlation matrix
+filtered_cor_change_S
+
+# Run the model
+glm_RASE_comp_chg_S <- glm(yrly_pct_RASEAndelGynnsam ~ 
+                             scale(yrly_pct_Älgtäthet.i.vinterstam) +
+                             scale(yrly_pct_ungulate_index) +
+                             scale(yrly_pct_AntalTallarHa) +
+                             scale(yrly_pct_AntalBjorkarHa) +
+                             scale(yrly_pct_AndelRojt...18) +
+                             scale(yrly_pct_proportion_young_forest),
+                           family = gaussian(link = "identity"),
+                           data = RASE_change_Svealand)
+
+summary(glm_RASE_comp_chg_S)
+
+# Check for over dispersion
+glm_RASE_comp_chg_S_simres <- simulateResiduals(glm_RASE_comp_chg_S)
+testDispersion(glm_RASE_comp_chg_S_simres)
+
+# USE step() for forwards stepwise selection
+# Fit an initial empty model
+glm_RASE_comp_chg_S_null <- glm(yrly_pct_RASEAndelGynnsam ~ 1,  # Model with no predictors
+                                family = gaussian(link = "identity"),
+                                data = RASE_change_Svealand)
+
+# Fit a forward stepwise model
+glm_RASE_comp_chg_S_fwd <- step(glm_RASE_comp_chg_S_null, 
+                                scope = list(lower = glm_RASE_comp_chg_S_null, 
+                                             upper = ~ 
+                                               scale(yrly_pct_Älgtäthet.i.vinterstam) +
+                                               scale(yrly_pct_ungulate_index) +
+                                               scale(yrly_pct_AntalTallarHa) +
+                                               scale(yrly_pct_AntalBjorkarHa) +
+                                               scale(yrly_pct_AndelRojt...18) +
+                                               scale(yrly_pct_proportion_young_forest),
+                                             direction = "forward", 
+                                             trace = TRUE))
+
+summary(glm_RASE_comp_chg_S_fwd)
+
+# Check for over dispersion
+glm_RASE_comp_chg_S_simres <- simulateResiduals(glm_RASE_comp_chg_S_fwd)
+testDispersion(glm_RASE_comp_chg_S_simres)
+
+## Götaland
+RASE_change_Gotaland <- RASE_data_change %>%
+  filter(LandsdelNamn %in% c("Götaland"))
+
+# Create a correlation matrix
+cor_matrix_change_G <- cor(RASE_change_Gotaland[, c("yrly_pct_Älgtäthet.i.vinterstam", "yrly_pct_ungulate_index", # Browsers
+                                                    "yrly_pct_proportion_young_forest", "yrly_pct_AndelRojt...18", # Site
+                                                    "yrly_pct_AntalGranarHa", "yrly_pct_AntalTallarHa", "yrly_pct_AntalBjorkarHa")], # Competitor species
+                           method = "pearson", use = "pairwise.complete.obs")
+
+# Filter correlations greater than 0.7 or less than -0.7, excluding 1
+filtered_cor_change_G <- cor_matrix_change_G
+filtered_cor_change_G[abs(filtered_cor_change_G) <= 0.7 | abs(filtered_cor_change_G) == 1] <- NA
+
+# View the filtered correlation matrix
+filtered_cor_change_G
+
+# Run the model
+glm_RASE_comp_chg_G <- glm(yrly_pct_RASEAndelGynnsam ~ 
+                             scale(yrly_pct_Älgtäthet.i.vinterstam) +
+                             scale(yrly_pct_ungulate_index) +
+                             scale(yrly_pct_AntalTallarHa) +
+                             scale(yrly_pct_AntalBjorkarHa) +
+                             scale(yrly_pct_AndelRojt...18) +
+                             scale(yrly_pct_proportion_young_forest),
+                           family = gaussian(link = "identity"),
+                           data = RASE_change_Gotaland)
+
+summary(glm_RASE_comp_chg_G)
+
+# Check for over dispersion
+glm_RASE_comp_chg_G_simres <- simulateResiduals(glm_RASE_comp_chg_G)
+testDispersion(glm_RASE_comp_chg_G_simres)
+
+# USE step() for forwards stepwise selection
+# Fit an initial empty model
+glm_RASE_comp_chg_G_null <- glm(yrly_pct_RASEAndelGynnsam ~ 1,  # Model with no predictors
+                                family = gaussian(link = "identity"),
+                                data = RASE_change_Gotaland)
+
+# Fit a forward stepwise model
+glm_RASE_comp_chg_G_fwd <- step(glm_RASE_comp_chg_G_null, 
+                                scope = list(lower = glm_RASE_comp_chg_G_null, 
+                                             upper = ~ 
+                                               scale(yrly_pct_Älgtäthet.i.vinterstam) +
+                                               scale(yrly_pct_ungulate_index) +
+                                               scale(yrly_pct_AntalTallarHa) +
+                                               scale(yrly_pct_AntalBjorkarHa) +
+                                               scale(yrly_pct_AndelRojt...18) +
+                                               scale(yrly_pct_proportion_young_forest),
+                                             direction = "forward", 
+                                             trace = TRUE))
+
+summary(glm_RASE_comp_chg_G_fwd)
+
+# Check for over dispersion
+glm_RASE_comp_chg_G_simres <- simulateResiduals(glm_RASE_comp_chg_G_fwd)
+testDispersion(glm_RASE_comp_chg_G_simres)
 
 ## Create summary table of all models ####
 
@@ -1127,4 +1327,4 @@ tab_model(glm_RASE_comp_chg_fwd, glm_RASE_comp_chg_N_fwd, glm_RASE_comp_chg_S_fw
           show.stat = TRUE,
           #show.bic = TRUE,
           #show.icc = FALSE,
-          file = "~/GitHub/Moose-Targets/Tables/RASE_comp_abin_table.html")
+          file = "~/GitHub/Moose-Targets/Tables/RASE_comp_change_abin_table.html")

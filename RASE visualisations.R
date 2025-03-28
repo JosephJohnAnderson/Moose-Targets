@@ -189,7 +189,7 @@ sort(colSums(is.na(RASE_data_plotting)), decreasing = TRUE)
 
 ## Three point averages ####
 
-# First three-point average using all data (2015-2024)
+# First three-point average using five year data (2015-2019)
 RASE_first <- RASE_data_plotting %>%
   filter(InvAr >= 2015 & InvAr <= 2019) %>%  # Keep only relevant years
   group_by(Registreri, LandsdelNamn, LanNamn) %>%
@@ -202,7 +202,7 @@ RASE_first <- RASE_data_plotting %>%
   ) %>%
   ungroup()
 
-# Last three-point average using all data (2020-2024)
+# Last three-point average using five year data (2020-2024)
 RASE_last <- RASE_data_plotting %>%
   filter(InvAr >= 2020 & InvAr <= 2024) %>%  # Keep only relevant years
   group_by(Registreri, LandsdelNamn, LanNamn) %>%
@@ -215,26 +215,36 @@ RASE_last <- RASE_data_plotting %>%
   ) %>%
   ungroup()
 
+# Last three-point average using all data (2015-2024)
+RASE_abin <- RASE_data_plotting %>%
+  filter(InvAr >= 2015 & InvAr <= 2024) %>%  # Keep only relevant years
+  group_by(Registreri, LandsdelNamn, LanNamn) %>%
+  arrange(Registreri, desc(InvAr)) %>%  # Sort in descending order
+  slice_head(n = 3) %>%  # Select latest 3 years within range
+  summarise(
+    across(where(is.numeric) & !all_of("InvAr"), list(mean = ~mean(.x, na.rm = TRUE),
+                                                      sd = ~sd(.x, na.rm = TRUE))),
+    years_used = paste(InvAr, collapse = ", ")  # Keep track of years used
+  ) %>%
+  ungroup()
+
 # Change between the periods
 RASE_change <- RASE_first %>%
-  select(Registreri, LandsdelNamn, LanNamn, 
-         AntalRASEHa_mean_first = AntalRASEHa_mean, 
+  rename(AntalRASEHa_mean_first = AntalRASEHa_mean, 
          RASEAndelGynnsam_mean_first = RASEAndelGynnsam_mean) %>%
-  inner_join(
+  full_join(
     RASE_last %>%
-      select(Registreri, 
-             AntalRASEHa_mean_last = AntalRASEHa_mean, 
+      rename(AntalRASEHa_mean_last = AntalRASEHa_mean, 
              RASEAndelGynnsam_mean_last = RASEAndelGynnsam_mean),
     by = "Registreri"
   ) %>%
   mutate(
-    Change_RASEHa = AntalRASEHa_mean_last - AntalRASEHa_mean_first,  # Change for AntalRASEHa
-    Change_RASEAndelGynnsam = RASEAndelGynnsam_mean_last - RASEAndelGynnsam_mean_first  # Change for RASEAndelGynnsam
+    Change_RASEHa = AntalRASEHa_mean_last - AntalRASEHa_mean_first,
+    Change_RASEAndelGynnsam = RASEAndelGynnsam_mean_last - RASEAndelGynnsam_mean_first
   )
 
-
 # View the result
-head(RASE_last)
+head(RASE_abin)
 head(RASE_change)
 
 ## Create shape files ####
@@ -242,11 +252,11 @@ library(sf)
 library(tmap)
 
 # Get AFO shape file
-AFO_shp <- st_read("//storage-um.slu.se/restricted$/vfm/Vilt-Skog/Moose-Targets/Clipped MMA Shape File/updated_AFO_shapefile")
+AFO_shp <- st_read("//storage-um.slu.se/restricted$/vfm/Vilt-Skog/Moose-Targets/Clipped MMA Shape File/updated_AFO_shapefile.shp")
 
 # Create shape file for current and target status maps 
 AFO_RASE <- AFO_shp %>%
-  left_join(RASE_last, by = "Registreri")
+  left_join(RASE_abin, by = "Registreri")
 
 # Create shape file for change maps 
 AFO_RASE_change <- AFO_shp %>%
@@ -260,29 +270,35 @@ RASEperHa_current <- tm_shape(AFO_RASE) +
   tm_fill(
     "AntalRASEHa_mean", 
     fill.scale = tm_scale_intervals(
-      values = "blues",# Auto blue gradient
+      values = "blues", # Auto blue gradient
       breaks = c(0, 200, 400, 800, 1600),
-      value.na = "grey"   # Color for NA values
+      value.na = "grey",
+      labels = c("< 200", "200 till 400", "400 till 800", "800 till 1600")
     ),
-    fill.legend = tm_legend(title = "RASE stems per ha.")
+    fill.legend = tm_legend(title = "Stammar per hektar") 
   ) +
-  tm_title("RASE density 2022/24", size = 1.0) +
-  tm_shape(AFO_joined) +
+  tm_title("RASE st/ha", size = 1.0) +
+  tm_shape(AFO_RASE) +
   tm_fill(
     "Registreri",
     fill.scale = tm_scale(values = c("white", "white", "white")),
     fill_alpha = 0,
     fill.legend = tm_legend_hide()
   ) +
-  tm_borders(col = "black", lwd = 1.5)
-
+  tm_borders(col = "black", lwd = 1.5) +
+  tm_layout(
+    legend.outside = FALSE, # Keep legend inside the map area
+    legend.position = c(0.0, 1.0), # Adjust position (near top-left)
+    legend.bg.color = "white", # Background color for visibility
+    legend.bg.alpha = 0.0, # Fully transparent background
+  )
 
 RASEperHa_current
 
-# Save the tmap object as a TIFF file
+# Save the tmap object as a PNG file
 tmap_save(RASEperHa_current, 
-          filename = "//storage-um.slu.se/restricted$/vfm/Vilt-Skog/Moose-Targets/RASE plots/RASE stems per hectare ÄFO 2022-2024.tiff",
-          width = 26, height = 21, dpi = 300, units = "cm")
+          filename = "//storage-um.slu.se/restricted$/vfm/Vilt-Skog/Moose-Targets/Results/Joseph/RASE_ha/Maps/RASE_stems_per_hectare_current_2022-2024.png",
+          width = 7, height = 16, dpi = 300, units = "cm")
 
 # RASE per ha. target status
 RASEperHa_target <- tm_shape(AFO_RASE) +
@@ -292,22 +308,39 @@ RASEperHa_target <- tm_shape(AFO_RASE) +
     breaks = c(0, 200, 400, 10000),
     label.na = "NA",
     value.na = "grey",
-    labels = c("< 200", "200 – 400", "> 400") ),fill.legend = tm_legend(title = "RASE stems per ha.")) +
-  tm_title("RASE density targets 2022/24", size = 1.0) +
-  tm_shape(AFO_joined) +
+    labels = c("< 200", "200 till 400", "> 400") ),
+    fill.legend = tm_legend(title = "Stammar per hektar")) +
+  tm_title("RASE st/ha målstatus", size = 1.0) +
+  tm_shape(AFO_RASE) +
   tm_fill(
     "Registreri",
     fill.scale = tm_scale(values = c("white", "white", "white")),
     fill_alpha = 0,
     fill.legend = tm_legend_hide()) +
-    tm_borders(col = "black", lwd = 1.5)
+    tm_borders(col = "black", lwd = 1.5)+
+  tm_layout(
+    legend.outside = FALSE, # Keep legend inside the map area
+    legend.position = c(0.0, 1.0), # Adjust position (near top-left)
+    legend.bg.color = "white", # Background color for visibility
+    legend.bg.alpha = 0.0 # Ttransparent background
+  )
 
 RASEperHa_target
 
-# Save the tmap object as a TIFF file
+# Save the tmap object as a PNG file
 tmap_save(RASEperHa_target, 
-          filename = "//storage-um.slu.se/restricted$/vfm/Vilt-Skog/Moose-Targets/RASE plots/RASE stems per hectare ÄFO 2022-2024.tiff",
-          width = 26, height = 21, dpi = 300, units = "cm")
+          filename = "//storage-um.slu.se/restricted$/vfm/Vilt-Skog/Moose-Targets/Results/Joseph/RASE_ha/Maps/RASE_stems_per_hectare_targets_2022-2024.png",
+          width = 7, height = 16, dpi = 300, units = "cm")
+
+# Arrange the two maps in a row
+RASEperHa_combined <- tmap_arrange(RASEperHa_current, RASEperHa_target, ncol = 2)
+RASEperHa_combined
+
+# Save the tmap object as a PNG file
+tmap_save(RASEperHa_combined, 
+          filename = "//storage-um.slu.se/restricted$/vfm/Vilt-Skog/Moose-Targets/Results/Joseph/RASE_ha/Maps/RASE_stems_per_hectare_combined.png",
+          width = 14, height = 16, dpi = 300, units = "cm")
+
 
 ## Proportion RASE competitive ####
 
@@ -318,28 +351,35 @@ RASEcomp_current <- tm_shape(AFO_RASE) +
     "RASEAndelGynnsam_mean", 
     fill.scale = tm_scale_intervals(
       values = "blues",# Auto blue gradient
-      breaks = c(0, 0.05, 0.1, 0.25, 0.5),
-      value.na = "grey"   # Color for NA values
+      breaks = c(0, 0.05, 0.1, 0.2, 0.4),
+      value.na = "grey",   # Color for NA values
+      labels = c("< 5%", "5 till 10%", "10 till 20%", "20 till 40%")
     ),
-    fill.legend = tm_legend(title = "RASE stems per ha.")
+    fill.legend = tm_legend(title = "Andel gynnsam") 
   ) +
-  tm_title("RASE competitive 2022/24", size = 1.0) +
-  tm_shape(AFO_joined) +
+  tm_title("RASE andel gynnsam", size = 1.0) +
+  tm_shape(AFO_RASE) +
   tm_fill(
     "Registreri",
     fill.scale = tm_scale(values = c("white", "white", "white")),
     fill_alpha = 0,
     fill.legend = tm_legend_hide()
   ) +
-  tm_borders(col = "black", lwd = 1.5)
+  tm_borders(col = "black", lwd = 1.5) +
+  tm_layout(
+    legend.outside = FALSE, # Keep legend inside the map area
+    legend.position = c(0.0, 1.0), # Adjust position (near top-left)
+    legend.bg.color = "white", # Background color for visibility
+    legend.bg.alpha = 0.0 # Fully transparent background
+  )
 
 
 RASEcomp_current
 
-# Save the tmap object as a TIFF file
+# Save the tmap object as a PNG file
 tmap_save(RASEcomp_current, 
-          filename = "//storage-um.slu.se/restricted$/vfm/Vilt-Skog/Moose-Targets/RASE plots/RASE stems per hectare ÄFO 2022-2024.tiff",
-          width = 26, height = 21, dpi = 300, units = "cm")
+          filename = "//storage-um.slu.se/restricted$/vfm/Vilt-Skog/Moose-Targets/Results/Joseph/RASE_comp/Maps/RASE_competative_status_current_2022-2024.png",
+          width = 7, height = 16, dpi = 300, units = "cm")
 
 # RASE competitive target status
 RASEcomp_target <- tm_shape(AFO_RASE) +
@@ -349,22 +389,28 @@ RASEcomp_target <- tm_shape(AFO_RASE) +
     breaks = c(0, 0.05, 0.1, 1),
     label.na = "NA",
     value.na = "grey",
-    labels = c("< 5%", "5 – 10 %", "> 10 %") ),fill.legend = tm_legend(title = "RASE stems per ha.")) +
-  tm_title("RASE competitive targets 2022/24", size = 1.0) +
-  tm_shape(AFO_joined) +
+    labels = c("< 5%", "5 till 10 %", "> 10 %") ),fill.legend = tm_legend(title = "Andel gynnsam")) +
+  tm_title("RASE andel gynnsam målstatus", size = 1.0) +
+  tm_shape(AFO_RASE) +
   tm_fill(
     "Registreri",
     fill.scale = tm_scale(values = c("white", "white", "white")),
     fill_alpha = 0,
     fill.legend = tm_legend_hide()) +
-  tm_borders(col = "black", lwd = 1.5)
+  tm_borders(col = "black", lwd = 1.5)+
+  tm_layout(
+    legend.outside = FALSE, # Keep legend inside the map area
+    legend.position = c(0.0, 1.0), # Adjust position (near top-left)
+    legend.bg.color = "white", # Background color for visibility
+    legend.bg.alpha = 0.0 # Transparent background
+  )
 
 RASEcomp_target
 
-# Save the tmap object as a TIFF file
+# Save the tmap object as a PNG file
 tmap_save(RASEcomp_target, 
-          filename = "//storage-um.slu.se/restricted$/vfm/Vilt-Skog/Moose-Targets/RASE plots/RASE stems per hectare ÄFO 2022-2024.tiff",
-          width = 26, height = 21, dpi = 300, units = "cm")
+          filename = "//storage-um.slu.se/restricted$/vfm/Vilt-Skog/Moose-Targets/Results/Joseph/RASE_comp/Maps/RASE_competative_status_targets_2022-2024.png",
+          width = 7, height = 16, dpi = 300, units = "cm")
 
 
 # RASE competitive change
@@ -374,19 +420,34 @@ RASEcomp_change_map <- tm_shape(AFO_RASE_change) +
     "Change_RASEAndelGynnsam", 
     fill.scale = tm_scale_intervals(
       values = c("#d7191c", "#fdae61", "#ffffbf", "#abd9e9", "#2c7bb6"),  # Diverging colors
-      breaks = c(-0.1, -0.05, 0, 0.05, 0.1),  # Custom breakpoints
-      labels = c("> -5%", "0 to -5 %", "0 to +5 %", "> +5 %"),
+      breaks = c(-0.9, -0.05, 0, 0.05, 0.9),  # Custom breakpoints
+      labels = c("> -5%", "0 till -5 %", "0 till +5 %", "> +5 %"),
       value.na = "grey"  # Color for NA values
     ),
-    fill.legend = tm_legend(title = "Change in competitive")
+    fill.legend = tm_legend(title = "Förändringsandel")
   ) +
-  tm_title("Change in RASE competitive (2020–2024 vs. 2015–2019)", size = 1.0) +
+  tm_title("RASE förändringandel gynnsam", size = 1.0) +
   tm_shape(AFO_RASE_change) +
-  tm_borders(col = "black", lwd = 1.5)
+  tm_borders(col = "black", lwd = 1.5)+
+  tm_layout(
+    legend.outside = FALSE, # Keep legend inside the map area
+    legend.position = c(0.0, 1.0), # Adjust position (near top-left)
+    legend.bg.color = "white", # Background color for visibility
+    legend.bg.alpha = 0.0 # Transparent background
+  )
 
 RASEcomp_change_map
 
-# Save the tmap object as a TIFF file
+# Save the tmap object as a PNG file
 tmap_save(RASEcomp_change_map, 
-          filename = "//storage-um.slu.se/restricted$/vfm/Vilt-Skog/Moose-Targets/RASE plots/RASE stems per hectare ÄFO 2022-2024.tiff",
-          width = 26, height = 21, dpi = 300, units = "cm")
+          filename = "//storage-um.slu.se/restricted$/vfm/Vilt-Skog/Moose-Targets/Results/Joseph/RASE_comp/Maps/RASE_competative_status_change.png",
+          width = 7, height = 16, dpi = 300, units = "cm")
+
+# Arrange the three maps in a row
+RASEcomp_combined <- tmap_arrange(RASEcomp_current, RASEcomp_target, RASEcomp_change_map, ncol = 3)
+RASEcomp_combined
+
+# Save the tmap object as a PNG file
+tmap_save(RASEcomp_combined, 
+          filename = "//storage-um.slu.se/restricted$/vfm/Vilt-Skog/Moose-Targets/Results/Joseph/RASE_comp/Maps/RASE_competative_combined.png",
+          width = 21, height = 16, dpi = 300, units = "cm")

@@ -1016,19 +1016,19 @@ RASE_data_change <- RASE_data_change %>%
 # Filter change data so that it only includes relvant varialbes 
 RASE_data_change <- RASE_data_change %>%
   dplyr::select(LandsdelNamn, LanNamn, Registreri,
-         yrly_pct_RASEAndelGynnsam, 
-         yrly_pct_Älgtäthet.i.vinterstam, 
-         yrly_pct_ungulate_index, 
-         yrly_pct_AntalTallarHa,
-         yrly_pct_AntalGranarHa,
-         yrly_pct_AntalBjorkarHa, 
-         yrly_pct_AndelRojt...18, 
-         yrly_pct_proportion_young_forest)
+         abs_change_RASEAndelGynnsam, 
+         abs_change_Älgtäthet.i.vinterstam, 
+         abs_change_ungulate_index, 
+         abs_change_AntalTallarHa,
+         abs_change_AntalGranarHa,
+         abs_change_AntalBjorkarHa, 
+         abs_change_AndelRojt...18, 
+         abs_change_proportion_young_forest)
 
 # Create a correlation matrix
-cor_matrix_change <- cor(RASE_data_change[, c("yrly_pct_Älgtäthet.i.vinterstam", "yrly_pct_ungulate_index", # Browsers
-                                              "yrly_pct_proportion_young_forest", "yrly_pct_AndelRojt...18", # Site
-                                              "yrly_pct_AntalGranarHa", "yrly_pct_AntalTallarHa", "yrly_pct_AntalBjorkarHa")], # Competitor species
+cor_matrix_change <- cor(RASE_data_change[, c("abs_change_Älgtäthet.i.vinterstam", "abs_change_ungulate_index", # Browsers
+                                              "abs_change_proportion_young_forest", "abs_change_AndelRojt...18", # Site
+                                              "abs_change_AntalGranarHa", "abs_change_AntalTallarHa", "abs_change_AntalBjorkarHa")], # Competitor species
                          method = "pearson", use = "pairwise.complete.obs")
 
 # Filter correlations greater than 0.7 or less than -0.7, excluding 1
@@ -1052,13 +1052,13 @@ library(MASS)
 RASE_data_change <- na.omit(RASE_data_change)
 
 # Run the model
-glm_RASE_comp_chg <- glm(yrly_pct_RASEAndelGynnsam ~ 
-                           scale(yrly_pct_Älgtäthet.i.vinterstam) +
-                           scale(yrly_pct_ungulate_index) +
-                           scale(yrly_pct_AntalTallarHa) +
-                           scale(yrly_pct_AntalBjorkarHa) +
-                           scale(yrly_pct_AndelRojt...18) +
-                           scale(yrly_pct_proportion_young_forest),
+glm_RASE_comp_chg <- glm(abs_change_RASEAndelGynnsam ~ 
+                           scale(abs_change_Älgtäthet.i.vinterstam) +
+                           scale(abs_change_ungulate_index) +
+                           scale(abs_change_AntalTallarHa) +
+                           scale(abs_change_AntalBjorkarHa) +
+                           scale(abs_change_AndelRojt...18) +
+                           scale(abs_change_proportion_young_forest),
                          family = gaussian(link = "identity"),
                          data = RASE_data_change)
 
@@ -1086,7 +1086,7 @@ qqnorm(residuals(glm_RASE_comp_chg_bck)); qqline(residuals(glm_RASE_comp_chg_bck
 
 # USE step() for forwards stepwise selection
 # Fit an initial empty model
-glm_RASE_comp_chg_null <- glm(yrly_pct_RASEAndelGynnsam ~ 1,  # Model with no predictors
+glm_RASE_comp_chg_null <- glm(abs_change_RASEAndelGynnsam ~ 1,  # Model with no predictors
                               family = gaussian(link = "identity"),
                               data = RASE_data_change)
 
@@ -1094,12 +1094,12 @@ glm_RASE_comp_chg_null <- glm(yrly_pct_RASEAndelGynnsam ~ 1,  # Model with no pr
 glm_RASE_comp_chg_fwd <- step(glm_RASE_comp_chg_null, 
                           scope = list(lower = glm_RASE_comp_chg_null, 
                                        upper = ~ 
-                                         scale(yrly_pct_Älgtäthet.i.vinterstam) +
-                                         scale(yrly_pct_ungulate_index) +
-                                         scale(yrly_pct_AntalTallarHa) +
-                                         scale(yrly_pct_AntalBjorkarHa) +
-                                         scale(yrly_pct_AndelRojt...18) +
-                                         scale(yrly_pct_proportion_young_forest),
+                                         scale(abs_change_Älgtäthet.i.vinterstam) +
+                                         scale(abs_change_ungulate_index) +
+                                         scale(abs_change_AntalTallarHa) +
+                                         scale(abs_change_AntalBjorkarHa) +
+                                         scale(abs_change_AndelRojt...18) +
+                                         scale(abs_change_proportion_young_forest),
                                        direction = "forward", 
                                        trace = TRUE))
 
@@ -1119,9 +1119,9 @@ RASE_change_Norrland <- RASE_data_change %>%
   filter(LandsdelNamn %in% c("Södra Norrland", "Norra Norrland"))
 
 # Create a correlation matrix
-cor_matrix_change_N <- cor(RASE_change_Norrland[, c("yrly_pct_Älgtäthet.i.vinterstam", "yrly_pct_ungulate_index", # Browsers
-                                              "yrly_pct_proportion_young_forest", "yrly_pct_AndelRojt...18", # Site
-                                              "yrly_pct_AntalGranarHa", "yrly_pct_AntalTallarHa", "yrly_pct_AntalBjorkarHa")], # Competitor species
+cor_matrix_change_N <- cor(RASE_change_Norrland[, c("abs_change_Älgtäthet.i.vinterstam", "abs_change_ungulate_index", # Browsers
+                                              "abs_change_proportion_young_forest", "abs_change_AndelRojt...18", # Site
+                                              "abs_change_AntalGranarHa", "abs_change_AntalTallarHa", "abs_change_AntalBjorkarHa")], # Competitor species
                          method = "pearson", use = "pairwise.complete.obs")
 
 # Filter correlations greater than 0.7 or less than -0.7, excluding 1
@@ -1132,13 +1132,13 @@ filtered_cor_change_N[abs(filtered_cor_change_N) <= 0.7 | abs(filtered_cor_chang
 filtered_cor_change_N
 
 # Run the model
-glm_RASE_comp_chg_N <- glm(yrly_pct_RASEAndelGynnsam ~ 
-                             scale(yrly_pct_Älgtäthet.i.vinterstam) +
-                             scale(yrly_pct_ungulate_index) +
-                             scale(yrly_pct_AntalTallarHa) +
-                             scale(yrly_pct_AntalBjorkarHa) +
-                             scale(yrly_pct_AndelRojt...18) +
-                             scale(yrly_pct_proportion_young_forest),
+glm_RASE_comp_chg_N <- glm(abs_change_RASEAndelGynnsam ~ 
+                             scale(abs_change_Älgtäthet.i.vinterstam) +
+                             scale(abs_change_ungulate_index) +
+                             scale(abs_change_AntalTallarHa) +
+                             scale(abs_change_AntalBjorkarHa) +
+                             scale(abs_change_AndelRojt...18) +
+                             scale(abs_change_proportion_young_forest),
                            family = gaussian(link = "identity"),
                            data = RASE_change_Norrland)
 
@@ -1148,9 +1148,14 @@ summary(glm_RASE_comp_chg_N)
 glm_RASE_comp_chg_N_simres <- simulateResiduals(glm_RASE_comp_chg_N)
 testDispersion(glm_RASE_comp_chg_N_simres)
 
+# Check for normality of residuals
+shapiro.test(residuals(glm_RASE_comp_chg_N))  # Shapiro-Wilk test
+qqnorm(residuals(glm_RASE_comp_chg_N)); qqline(residuals(glm_RASE_comp_chg_N), col = "red")  # Q-Q plot
+
+
 # USE step() for forwards stepwise selection
 # Fit an initial empty model
-glm_RASE_comp_chg_N_null <- glm(yrly_pct_RASEAndelGynnsam ~ 1,  # Model with no predictors
+glm_RASE_comp_chg_N_null <- glm(abs_change_RASEAndelGynnsam ~ 1,  # Model with no predictors
                               family = gaussian(link = "identity"),
                               data = RASE_change_Norrland)
 
@@ -1158,12 +1163,12 @@ glm_RASE_comp_chg_N_null <- glm(yrly_pct_RASEAndelGynnsam ~ 1,  # Model with no 
 glm_RASE_comp_chg_N_fwd <- step(glm_RASE_comp_chg_N_null, 
                             scope = list(lower = glm_RASE_comp_chg_N_null, 
                                          upper = ~ 
-                                           scale(yrly_pct_Älgtäthet.i.vinterstam) +
-                                           scale(yrly_pct_ungulate_index) +
-                                           scale(yrly_pct_AntalTallarHa) +
-                                           scale(yrly_pct_AntalBjorkarHa) +
-                                           scale(yrly_pct_AndelRojt...18) +
-                                           scale(yrly_pct_proportion_young_forest),
+                                           scale(abs_change_Älgtäthet.i.vinterstam) +
+                                           scale(abs_change_ungulate_index) +
+                                           scale(abs_change_AntalTallarHa) +
+                                           scale(abs_change_AntalBjorkarHa) +
+                                           scale(abs_change_AndelRojt...18) +
+                                           scale(abs_change_proportion_young_forest),
                                          direction = "forward", 
                                          trace = TRUE))
 
@@ -1173,14 +1178,19 @@ summary(glm_RASE_comp_chg_N_fwd)
 glm_RASE_comp_chg_N_simres <- simulateResiduals(glm_RASE_comp_chg_N_fwd)
 testDispersion(glm_RASE_comp_chg_N_simres)
 
+# Check for normality of residuals
+shapiro.test(residuals(glm_RASE_comp_chg_N_fwd))  # Shapiro-Wilk test
+qqnorm(residuals(glm_RASE_comp_chg_N_fwd)); qqline(residuals(glm_RASE_comp_chg_N_fwd), col = "red")  # Q-Q plot
+
+
 ## Svealand
 RASE_change_Svealand <- RASE_data_change %>%
   filter(LandsdelNamn %in% c("Svealand"))
 
 # Create a correlation matrix
-cor_matrix_change_S <- cor(RASE_change_Svealand[, c("yrly_pct_Älgtäthet.i.vinterstam", "yrly_pct_ungulate_index", # Browsers
-                                                    "yrly_pct_proportion_young_forest", "yrly_pct_AndelRojt...18", # Site
-                                                    "yrly_pct_AntalGranarHa", "yrly_pct_AntalTallarHa", "yrly_pct_AntalBjorkarHa")], # Competitor species
+cor_matrix_change_S <- cor(RASE_change_Svealand[, c("abs_change_Älgtäthet.i.vinterstam", "abs_change_ungulate_index", # Browsers
+                                                    "abs_change_proportion_young_forest", "abs_change_AndelRojt...18", # Site
+                                                    "abs_change_AntalGranarHa", "abs_change_AntalTallarHa", "abs_change_AntalBjorkarHa")], # Competitor species
                            method = "pearson", use = "pairwise.complete.obs")
 
 # Filter correlations greater than 0.7 or less than -0.7, excluding 1
@@ -1191,13 +1201,13 @@ filtered_cor_change_S[abs(filtered_cor_change_S) <= 0.7 | abs(filtered_cor_chang
 filtered_cor_change_S
 
 # Run the model
-glm_RASE_comp_chg_S <- glm(yrly_pct_RASEAndelGynnsam ~ 
-                             scale(yrly_pct_Älgtäthet.i.vinterstam) +
-                             scale(yrly_pct_ungulate_index) +
-                             scale(yrly_pct_AntalTallarHa) +
-                             scale(yrly_pct_AntalBjorkarHa) +
-                             scale(yrly_pct_AndelRojt...18) +
-                             scale(yrly_pct_proportion_young_forest),
+glm_RASE_comp_chg_S <- glm(abs_change_RASEAndelGynnsam ~ 
+                             scale(abs_change_Älgtäthet.i.vinterstam) +
+                             scale(abs_change_ungulate_index) +
+                             scale(abs_change_AntalTallarHa) +
+                             scale(abs_change_AntalBjorkarHa) +
+                             scale(abs_change_AndelRojt...18) +
+                             scale(abs_change_proportion_young_forest),
                            family = gaussian(link = "identity"),
                            data = RASE_change_Svealand)
 
@@ -1207,9 +1217,14 @@ summary(glm_RASE_comp_chg_S)
 glm_RASE_comp_chg_S_simres <- simulateResiduals(glm_RASE_comp_chg_S)
 testDispersion(glm_RASE_comp_chg_S_simres)
 
+# Check for normality of residuals
+shapiro.test(residuals(glm_RASE_comp_chg_S))  # Shapiro-Wilk test
+qqnorm(residuals(glm_RASE_comp_chg_S)); qqline(residuals(glm_RASE_comp_chg_S), col = "red")  # Q-Q plot
+
+
 # USE step() for forwards stepwise selection
 # Fit an initial empty model
-glm_RASE_comp_chg_S_null <- glm(yrly_pct_RASEAndelGynnsam ~ 1,  # Model with no predictors
+glm_RASE_comp_chg_S_null <- glm(abs_change_RASEAndelGynnsam ~ 1,  # Model with no predictors
                                 family = gaussian(link = "identity"),
                                 data = RASE_change_Svealand)
 
@@ -1217,12 +1232,12 @@ glm_RASE_comp_chg_S_null <- glm(yrly_pct_RASEAndelGynnsam ~ 1,  # Model with no 
 glm_RASE_comp_chg_S_fwd <- step(glm_RASE_comp_chg_S_null, 
                                 scope = list(lower = glm_RASE_comp_chg_S_null, 
                                              upper = ~ 
-                                               scale(yrly_pct_Älgtäthet.i.vinterstam) +
-                                               scale(yrly_pct_ungulate_index) +
-                                               scale(yrly_pct_AntalTallarHa) +
-                                               scale(yrly_pct_AntalBjorkarHa) +
-                                               scale(yrly_pct_AndelRojt...18) +
-                                               scale(yrly_pct_proportion_young_forest),
+                                               scale(abs_change_Älgtäthet.i.vinterstam) +
+                                               scale(abs_change_ungulate_index) +
+                                               scale(abs_change_AntalTallarHa) +
+                                               scale(abs_change_AntalBjorkarHa) +
+                                               scale(abs_change_AndelRojt...18) +
+                                               scale(abs_change_proportion_young_forest),
                                              direction = "forward", 
                                              trace = TRUE))
 
@@ -1232,14 +1247,18 @@ summary(glm_RASE_comp_chg_S_fwd)
 glm_RASE_comp_chg_S_simres <- simulateResiduals(glm_RASE_comp_chg_S_fwd)
 testDispersion(glm_RASE_comp_chg_S_simres)
 
+# Check for normality of residuals
+shapiro.test(residuals(glm_RASE_comp_chg_S_fwd))  # Shapiro-Wilk test
+qqnorm(residuals(glm_RASE_comp_chg_S_fwd)); qqline(residuals(glm_RASE_comp_chg_S_fwd), col = "red")  # Q-Q plot
+
 ## Götaland
 RASE_change_Gotaland <- RASE_data_change %>%
   filter(LandsdelNamn %in% c("Götaland"))
 
 # Create a correlation matrix
-cor_matrix_change_G <- cor(RASE_change_Gotaland[, c("yrly_pct_Älgtäthet.i.vinterstam", "yrly_pct_ungulate_index", # Browsers
-                                                    "yrly_pct_proportion_young_forest", "yrly_pct_AndelRojt...18", # Site
-                                                    "yrly_pct_AntalGranarHa", "yrly_pct_AntalTallarHa", "yrly_pct_AntalBjorkarHa")], # Competitor species
+cor_matrix_change_G <- cor(RASE_change_Gotaland[, c("abs_change_Älgtäthet.i.vinterstam", "abs_change_ungulate_index", # Browsers
+                                                    "abs_change_proportion_young_forest", "abs_change_AndelRojt...18", # Site
+                                                    "abs_change_AntalGranarHa", "abs_change_AntalTallarHa", "abs_change_AntalBjorkarHa")], # Competitor species
                            method = "pearson", use = "pairwise.complete.obs")
 
 # Filter correlations greater than 0.7 or less than -0.7, excluding 1
@@ -1250,13 +1269,13 @@ filtered_cor_change_G[abs(filtered_cor_change_G) <= 0.7 | abs(filtered_cor_chang
 filtered_cor_change_G
 
 # Run the model
-glm_RASE_comp_chg_G <- glm(yrly_pct_RASEAndelGynnsam ~ 
-                             scale(yrly_pct_Älgtäthet.i.vinterstam) +
-                             scale(yrly_pct_ungulate_index) +
-                             scale(yrly_pct_AntalTallarHa) +
-                             scale(yrly_pct_AntalBjorkarHa) +
-                             scale(yrly_pct_AndelRojt...18) +
-                             scale(yrly_pct_proportion_young_forest),
+glm_RASE_comp_chg_G <- glm(abs_change_RASEAndelGynnsam ~ 
+                             scale(abs_change_Älgtäthet.i.vinterstam) +
+                             scale(abs_change_ungulate_index) +
+                             scale(abs_change_AntalTallarHa) +
+                             scale(abs_change_AntalBjorkarHa) +
+                             scale(abs_change_AndelRojt...18) +
+                             scale(abs_change_proportion_young_forest),
                            family = gaussian(link = "identity"),
                            data = RASE_change_Gotaland)
 
@@ -1266,9 +1285,13 @@ summary(glm_RASE_comp_chg_G)
 glm_RASE_comp_chg_G_simres <- simulateResiduals(glm_RASE_comp_chg_G)
 testDispersion(glm_RASE_comp_chg_G_simres)
 
+# Check for normality of residuals
+shapiro.test(residuals(glm_RASE_comp_chg_S_fwd))  # Shapiro-Wilk test
+qqnorm(residuals(glm_RASE_comp_chg_S_fwd)); qqline(residuals(glm_RASE_comp_chg_S_fwd), col = "red")  # Q-Q plot
+
 # USE step() for forwards stepwise selection
 # Fit an initial empty model
-glm_RASE_comp_chg_G_null <- glm(yrly_pct_RASEAndelGynnsam ~ 1,  # Model with no predictors
+glm_RASE_comp_chg_G_null <- glm(abs_change_RASEAndelGynnsam ~ 1,  # Model with no predictors
                                 family = gaussian(link = "identity"),
                                 data = RASE_change_Gotaland)
 
@@ -1276,12 +1299,12 @@ glm_RASE_comp_chg_G_null <- glm(yrly_pct_RASEAndelGynnsam ~ 1,  # Model with no 
 glm_RASE_comp_chg_G_fwd <- step(glm_RASE_comp_chg_G_null, 
                                 scope = list(lower = glm_RASE_comp_chg_G_null, 
                                              upper = ~ 
-                                               scale(yrly_pct_Älgtäthet.i.vinterstam) +
-                                               scale(yrly_pct_ungulate_index) +
-                                               scale(yrly_pct_AntalTallarHa) +
-                                               scale(yrly_pct_AntalBjorkarHa) +
-                                               scale(yrly_pct_AndelRojt...18) +
-                                               scale(yrly_pct_proportion_young_forest),
+                                               scale(abs_change_Älgtäthet.i.vinterstam) +
+                                               scale(abs_change_ungulate_index) +
+                                               scale(abs_change_AntalTallarHa) +
+                                               scale(abs_change_AntalBjorkarHa) +
+                                               scale(abs_change_AndelRojt...18) +
+                                               scale(abs_change_proportion_young_forest),
                                              direction = "forward", 
                                              trace = TRUE))
 
@@ -1290,6 +1313,10 @@ summary(glm_RASE_comp_chg_G_fwd)
 # Check for over dispersion
 glm_RASE_comp_chg_G_simres <- simulateResiduals(glm_RASE_comp_chg_G_fwd)
 testDispersion(glm_RASE_comp_chg_G_simres)
+
+# Check for normality of residuals
+shapiro.test(residuals(glm_RASE_comp_chg_G_fwd))  # Shapiro-Wilk test
+qqnorm(residuals(glm_RASE_comp_chg_G_fwd)); qqline(residuals(glm_RASE_comp_chg_G_fwd), col = "red")  # Q-Q plot
 
 ## Create summary table of all models ####
 

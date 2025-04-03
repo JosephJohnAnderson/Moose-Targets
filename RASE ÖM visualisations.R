@@ -37,10 +37,10 @@ summarySE <- function(data=NULL, measurevar, groupvars=NULL, na.rm=TRUE,
 
 ## import data set
 library(readxl)
-OM_trees_21_24 <- read_excel("~/PhD/Projects/Öster Malma exclosures/Data/Master/TallestTrees_ÖM_R.xlsx")
+OM_trees_21_25 <- read_excel("~/PhD/Projects/Öster Malma exclosures/Data/Master/TallestTrees_ÖM_R.xlsx")
 
 ## Select important variables
-tree_data <- OM_trees_21_24 %>% select(Distrikt, Hagn_id, Behandling, Datum, Art, Medelhöjd)
+tree_data <- OM_trees_21_25 %>% select(Distrikt, Hagn_id, Behandling, Datum, Art, Medelhöjd)
 
 ## Select only "Kontroll" and "Fast" for Hagn_id
 tree_data <- tree_data[tree_data$Hagn_id %in% c("Fast", "Kontroll"), ]
@@ -76,7 +76,7 @@ tree_height <- ggplot(tree_h, aes(x= Datum, y= Medelhöjd, color = Art, linetype
   geom_errorbar(aes(ymin= Medelhöjd-se, ymax= Medelhöjd+se, linetype = Hagn_id), width = 0, 
                 position = position_dodge(0.0), linetype = 1)+
   labs(title = "", colour = "Trädslag", linetype = "Behandling", x = "", y = "Medelhöjd (cm)")+
-  scale_x_continuous(breaks=c(2012,2013,2014,2015,2016,2017,2018,2019,2020,2021,2022,2023,2024))+
+  scale_x_continuous(breaks=c(2012,2013,2014,2015,2016,2017,2018,2019,2020,2021,2022,2023,2024,2025))+
   guides(linetype = guide_legend(order = 1),  # Behandling first
        colour = guide_legend(order = 2))  # Trädslag second
 print(tree_height)

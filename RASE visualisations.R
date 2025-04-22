@@ -182,6 +182,7 @@ Big_data$ungulate_index <- (
 RASE_data_plotting <- Big_data %>%
   dplyr::select(LandsdelNamn,LanNamn,Registreri, # Regional data
                 InvAr, # Year
+                AndelMargraMarker, # Stand productive for target status
                 AntalRASEHa, RASEAndelGynnsam) # Independent variables 
 
 # See which variables have most NA and consider removing them
@@ -301,6 +302,8 @@ tmap_save(RASEperHa_current,
           width = 7, height = 16, dpi = 300, units = "cm")
 
 # RASE per ha. target status
+
+# Simple map
 RASEperHa_target <- tm_shape(AFO_RASE) +
   tm_graticules(alpha = 0.3, n.x = 3, n.y = 6) +
   tm_fill("AntalRASEHa_mean", fill.scale = tm_scale(
@@ -329,6 +332,42 @@ RASEperHa_target
 
 # Save the tmap object as a PNG file
 tmap_save(RASEperHa_target, 
+          filename = "//storage-um.slu.se/restricted$/vfm/Vilt-Skog/Moose-Targets/Results/Joseph/RASE_ha/Maps/RASE_stems_per_hectare_targets_2022-2024.png",
+          width = 7, height = 16, dpi = 300, units = "cm")
+
+# Add a new column with pass/fail depending on 
+AFO_RASE$target_status <- with(AFO_RASE, ifelse(
+  AndelMargraMarker_mean < 0.4 & AntalRASEHa_mean > 200, "< 0.4 – Pass",
+  ifelse(AndelMargraMarker_mean >= 0.4 & AntalRASEHa_mean > 400, "≥ 0.4 – Pass",
+         ifelse(AndelMargraMarker_mean < 0.4 & AntalRASEHa_mean <= 200, "< 0.4 – Fail",
+                "≥ 0.4 – Fail")))
+)
+# Target status map
+
+RASE_target_status <- tm_shape(AFO_RASE) +
+  tm_graticules(alpha = 0.3, n.x = 3, n.y = 6) +
+  tm_fill("target_status",
+          palette = c("< 0.4 – Fail" = "#fdae61",
+                      "< 0.4 – Pass" = "#abd9e9",
+                      "≥ 0.4 – Fail" = "#d7191c",
+                      "≥ 0.4 – Pass" = "#2c7bb6"
+          ),
+          label.na = "NA",
+          value.na = "grey",
+          labels = c("< 200", "< 200", "> 400", "> 400"),
+          title = "Målstatus") +
+  tm_borders(col = "black", lwd = 1.5) +
+  tm_layout(
+    legend.outside = FALSE, # Keep legend inside the map area
+    legend.position = c(0.0, 1.0), # Adjust position (near top-left)
+    legend.bg.color = "white", # Background color for visibility
+    legend.bg.alpha = 0.0 # Transparent background
+  )
+
+RASE_target_status
+
+# Save the tmap object as a PNG file
+tmap_save(RASE_target_status, 
           filename = "//storage-um.slu.se/restricted$/vfm/Vilt-Skog/Moose-Targets/Results/Joseph/RASE_ha/Maps/RASE_stems_per_hectare_targets_2022-2024.png",
           width = 7, height = 16, dpi = 300, units = "cm")
 

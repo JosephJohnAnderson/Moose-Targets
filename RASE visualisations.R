@@ -347,14 +347,14 @@ AFO_RASE$target_status <- with(AFO_RASE, ifelse(
 RASE_target_status <- tm_shape(AFO_RASE) +
   tm_graticules(alpha = 0.3, n.x = 3, n.y = 6) +
   tm_fill("target_status",
-          palette = c("< 0.4 – Fail" = "#fdae61",
-                      "< 0.4 – Pass" = "#abd9e9",
-                      "≥ 0.4 – Fail" = "#d7191c",
-                      "≥ 0.4 – Pass" = "#2c7bb6"
+          palette = c("< 0.4 – Fail" = "#d7191c",
+                      "< 0.4 – Pass" = "#2c7bb6",
+                      "≥ 0.4 – Fail" = "#fdae61",
+                      "≥ 0.4 – Pass" = "#abd9e9"
           ),
           label.na = "NA",
           value.na = "grey",
-          labels = c("< 200", "< 200", "> 400", "> 400"),
+          labels = c("> 400", "> 400", "< 200", "< 200"),
           title = "Målstatus") +
   tm_borders(col = "black", lwd = 1.5) +
   tm_layout(

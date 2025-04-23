@@ -336,7 +336,7 @@ tmap_save(RASEperHa_target,
           width = 7, height = 16, dpi = 300, units = "cm")
 
 # Add a new column with pass/fail depending on AndelMargraMarker_mean
-AFO_RASE$target_status <- with(AFO_RASE, ifelse(
+AFO_RASE$target_status_ha <- with(AFO_RASE, ifelse(
   AndelMargraMarker_mean > 0.4 & AntalRASEHa_mean >= 200, "Low productivity pass",
   ifelse(AndelMargraMarker_mean > 0.4 & AntalRASEHa_mean < 200, "Low productivity fail",
          ifelse(AndelMargraMarker_mean < 0.4 & AntalRASEHa_mean >= 400, "High productivity pass",
@@ -346,7 +346,7 @@ AFO_RASE$target_status <- with(AFO_RASE, ifelse(
 # Target status map
 RASEperHa_target_status <- tm_shape(AFO_RASE) +
   tm_graticules(alpha = 0.3, n.x = 3, n.y = 6) +
-  tm_fill("target_status",
+  tm_fill("target_status_ha",
           fill.scale = tm_scale(
             values = c(
               "High productivity fail" = "#d7191c",
@@ -455,17 +455,17 @@ RASEcomp_target <- tm_shape(AFO_RASE) +
 RASEcomp_target
 
 # Add a new column with pass/fail depending on AndelMargraMarker_mean
-AFO_RASE$target_status <- with(AFO_RASE, ifelse(
-  AndelMargraMarker_mean > 0.4 & RASEAndelGynnsam_mean >= 200, "Low productivity pass",
-  ifelse(AndelMargraMarker_mean > 0.4 & RASEAndelGynnsam_mean < 200, "Low productivity fail",
-         ifelse(AndelMargraMarker_mean < 0.4 & RASEAndelGynnsam_mean >= 400, "High productivity pass",
+AFO_RASE$target_status_gy <- with(AFO_RASE, ifelse(
+  AndelMargraMarker_mean > 0.4 & RASEAndelGynnsam_mean >= 0.05, "Low productivity pass",
+  ifelse(AndelMargraMarker_mean > 0.4 & RASEAndelGynnsam_mean < 0.05, "Low productivity fail",
+         ifelse(AndelMargraMarker_mean < 0.4 & RASEAndelGynnsam_mean >= 0.1, "High productivity pass",
                 "High productivity fail")))
 )
 
 # Target status map
-RASEperHa_target_status <- tm_shape(AFO_RASE) +
+RASEcomp_target_status <- tm_shape(AFO_RASE) +
   tm_graticules(alpha = 0.3, n.x = 3, n.y = 6) +
-  tm_fill("target_status",
+  tm_fill("target_status_gy",
           fill.scale = tm_scale(
             values = c(
               "High productivity fail" = "#d7191c",
@@ -473,7 +473,7 @@ RASEperHa_target_status <- tm_shape(AFO_RASE) +
               "Low productivity fail" = "#fdae61",
               "Low productivity pass" = "#abd9e9"
             ),
-            labels = c("Nej < 400", "Ja ≥ 400", "Nej < 200", "Ja ≥ 200"),
+            labels = c("Nej < 10%", "Ja ≥ 10%", "Nej < 5%", "Ja ≥ 5%"),
             na.value = "grey"
           ),
           fill.legend = tm_legend(
@@ -483,7 +483,7 @@ RASEperHa_target_status <- tm_shape(AFO_RASE) +
           )
   ) +
   tm_borders(col = "black", lwd = 1.5) +
-  tm_title("RASE st/ha målstatus", size = 1.0) +
+  tm_title("RASE andel gynnsam målstatus", size = 1.0) +
   tm_layout(
     legend.outside = FALSE,
     legend.position = c(0.0, 1.0),
@@ -504,7 +504,7 @@ RASEcomp_change_map <- tm_shape(AFO_RASE_change) +
   tm_fill(
     "Change_RASEAndelGynnsam", 
     fill.scale = tm_scale_intervals(
-      values = c("#d7191c", "#fdae61", "#ffffbf", "#abd9e9", "#2c7bb6"),  # Diverging colors
+      values = c("#d7191c", "#fdae61", "#abd9e9", "#2c7bb6"),  # Diverging colors
       breaks = c(-0.9, -0.05, 0, 0.05, 0.9),  # Custom breakpoints
       labels = c("> -5%", "0 till -5 %", "0 till +5 %", "> +5 %"),
       value.na = "grey"  # Color for NA values
@@ -529,7 +529,7 @@ tmap_save(RASEcomp_change_map,
           width = 7, height = 16, dpi = 300, units = "cm")
 
 # Arrange the three maps in a row
-RASEcomp_combined <- tmap_arrange(RASEcomp_current, RASEcomp_target, RASEcomp_change_map, ncol = 3)
+RASEcomp_combined <- tmap_arrange(RASEcomp_current, RASEcomp_target_status, RASEcomp_change_map, ncol = 3)
 RASEcomp_combined
 
 # Save the tmap object as a PNG file

@@ -272,9 +272,9 @@ RASEperHa_current <- tm_shape(AFO_RASE) +
     "AntalRASEHa_mean", 
     fill.scale = tm_scale_intervals(
       values = "blues", # Auto blue gradient
-      breaks = c(0, 200, 400, 800, 1600),
+      breaks = c(0, 199, 399, 799, 1600),
       value.na = "grey",
-      labels = c("< 200", "200 till 400", "400 till 800", "800 till 1600")
+      labels = c("< 200", "200 till 399", "400 till 799", "800 till 1600")
     ),
     fill.legend = tm_legend(title = "Stammar per hektar") 
   ) +
@@ -308,10 +308,10 @@ RASEperHa_target <- tm_shape(AFO_RASE) +
   tm_graticules(alpha = 0.3, n.x = 3, n.y = 6) +
   tm_fill("AntalRASEHa_mean", fill.scale = tm_scale(
     values = c("#d7191c", "#fdae61", "#ffffbf", "#abd9e9", "#2c7bb6"), # Custom colour gradient
-    breaks = c(0, 200, 400, 10000),
+    breaks = c(0, 199, 399, 10000),
     label.na = "NA",
     value.na = "grey",
-    labels = c("< 200", "200 till 400", "> 400") ),
+    labels = c("< 200", "200 till 399", "> 400") ),
     fill.legend = tm_legend(title = "Stammar per hektar")) +
   tm_title("RASE st/ha målstatus", size = 1.0) +
   tm_shape(AFO_RASE) +
@@ -325,7 +325,7 @@ RASEperHa_target <- tm_shape(AFO_RASE) +
     legend.outside = FALSE, # Keep legend inside the map area
     legend.position = c(0.0, 1.0), # Adjust position (near top-left)
     legend.bg.color = "white", # Background color for visibility
-    legend.bg.alpha = 0.0 # Ttransparent background
+    legend.bg.alpha = 0.0 # Transparent background
   )
 
 RASEperHa_target
@@ -335,44 +335,52 @@ tmap_save(RASEperHa_target,
           filename = "//storage-um.slu.se/restricted$/vfm/Vilt-Skog/Moose-Targets/Results/Joseph/RASE_ha/Maps/RASE_stems_per_hectare_targets_2022-2024.png",
           width = 7, height = 16, dpi = 300, units = "cm")
 
-# Add a new column with pass/fail depending on 
+# Add a new column with pass/fail depending on AndelMargraMarker_mean
 AFO_RASE$target_status <- with(AFO_RASE, ifelse(
-  AndelMargraMarker_mean < 0.4 & AntalRASEHa_mean > 200, "< 0.4 – Pass",
-  ifelse(AndelMargraMarker_mean >= 0.4 & AntalRASEHa_mean > 400, "≥ 0.4 – Pass",
-         ifelse(AndelMargraMarker_mean < 0.4 & AntalRASEHa_mean <= 200, "< 0.4 – Fail",
-                "≥ 0.4 – Fail")))
+  AndelMargraMarker_mean > 0.4 & AntalRASEHa_mean >= 200, "Low productivity pass",
+  ifelse(AndelMargraMarker_mean > 0.4 & AntalRASEHa_mean < 200, "Low productivity fail",
+         ifelse(AndelMargraMarker_mean < 0.4 & AntalRASEHa_mean >= 400, "High productivity pass",
+                "High productivity fail")))
 )
-# Target status map
 
-RASE_target_status <- tm_shape(AFO_RASE) +
+# Target status map
+RASEperHa_target_status <- tm_shape(AFO_RASE) +
   tm_graticules(alpha = 0.3, n.x = 3, n.y = 6) +
   tm_fill("target_status",
-          palette = c("< 0.4 – Fail" = "#d7191c",
-                      "< 0.4 – Pass" = "#2c7bb6",
-                      "≥ 0.4 – Fail" = "#fdae61",
-                      "≥ 0.4 – Pass" = "#abd9e9"
+          fill.scale = tm_scale(
+            values = c(
+              "High productivity fail" = "#d7191c",
+              "High productivity pass" = "#2c7bb6",
+              "Low productivity fail" = "#fdae61",
+              "Low productivity pass" = "#abd9e9"
+            ),
+            labels = c("Nej < 400", "Ja ≥ 400", "Nej < 200", "Ja ≥ 200"),
+            na.value = "grey"
           ),
-          label.na = "NA",
-          value.na = "grey",
-          labels = c("> 400", "> 400", "< 200", "< 200"),
-          title = "Målstatus") +
+          fill.legend = tm_legend(
+            title = "Uppfyllt mål?",
+            show = TRUE,
+            na.text = "NA"
+          )
+  ) +
   tm_borders(col = "black", lwd = 1.5) +
+  tm_title("RASE st/ha målstatus", size = 1.0) +
   tm_layout(
-    legend.outside = FALSE, # Keep legend inside the map area
-    legend.position = c(0.0, 1.0), # Adjust position (near top-left)
-    legend.bg.color = "white", # Background color for visibility
-    legend.bg.alpha = 0.0 # Transparent background
+    legend.outside = FALSE,
+    legend.position = c(0.0, 1.0),
+    legend.bg.color = "white",
+    legend.bg.alpha = 0.0
   )
 
-RASE_target_status
+RASEperHa_target_status
 
 # Save the tmap object as a PNG file
-tmap_save(RASE_target_status, 
+tmap_save(RASEperHa_target_status, 
           filename = "//storage-um.slu.se/restricted$/vfm/Vilt-Skog/Moose-Targets/Results/Joseph/RASE_ha/Maps/RASE_stems_per_hectare_targets_2022-2024.png",
           width = 7, height = 16, dpi = 300, units = "cm")
 
 # Arrange the two maps in a row
-RASEperHa_combined <- tmap_arrange(RASEperHa_current, RASEperHa_target, ncol = 2)
+RASEperHa_combined <- tmap_arrange(RASEperHa_current, RASEperHa_target_status, ncol = 2)
 RASEperHa_combined
 
 # Save the tmap object as a PNG file
@@ -446,11 +454,49 @@ RASEcomp_target <- tm_shape(AFO_RASE) +
 
 RASEcomp_target
 
+# Add a new column with pass/fail depending on AndelMargraMarker_mean
+AFO_RASE$target_status <- with(AFO_RASE, ifelse(
+  AndelMargraMarker_mean > 0.4 & RASEAndelGynnsam_mean >= 200, "Low productivity pass",
+  ifelse(AndelMargraMarker_mean > 0.4 & RASEAndelGynnsam_mean < 200, "Low productivity fail",
+         ifelse(AndelMargraMarker_mean < 0.4 & RASEAndelGynnsam_mean >= 400, "High productivity pass",
+                "High productivity fail")))
+)
+
+# Target status map
+RASEperHa_target_status <- tm_shape(AFO_RASE) +
+  tm_graticules(alpha = 0.3, n.x = 3, n.y = 6) +
+  tm_fill("target_status",
+          fill.scale = tm_scale(
+            values = c(
+              "High productivity fail" = "#d7191c",
+              "High productivity pass" = "#2c7bb6",
+              "Low productivity fail" = "#fdae61",
+              "Low productivity pass" = "#abd9e9"
+            ),
+            labels = c("Nej < 400", "Ja ≥ 400", "Nej < 200", "Ja ≥ 200"),
+            na.value = "grey"
+          ),
+          fill.legend = tm_legend(
+            title = "Uppfyllt mål?",
+            show = TRUE,
+            na.text = "NA"
+          )
+  ) +
+  tm_borders(col = "black", lwd = 1.5) +
+  tm_title("RASE st/ha målstatus", size = 1.0) +
+  tm_layout(
+    legend.outside = FALSE,
+    legend.position = c(0.0, 1.0),
+    legend.bg.color = "white",
+    legend.bg.alpha = 0.0
+  )
+
+RASEcomp_target_status
+
 # Save the tmap object as a PNG file
-tmap_save(RASEcomp_target, 
+tmap_save(RASEcomp_target_status, 
           filename = "//storage-um.slu.se/restricted$/vfm/Vilt-Skog/Moose-Targets/Results/Joseph/RASE_comp/Maps/RASE_competative_status_targets_2022-2024.png",
           width = 7, height = 16, dpi = 300, units = "cm")
-
 
 # RASE competitive change
 RASEcomp_change_map <- tm_shape(AFO_RASE_change) +

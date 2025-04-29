@@ -272,7 +272,7 @@ RASEperHa_current <- tm_shape(AFO_RASE) +
     "AntalRASEHa_mean", 
     fill.scale = tm_scale_intervals(
       values = "blues", # Auto blue gradient
-      breaks = c(0, 199, 399, 799, 1600),
+      breaks = c(0, 200, 400, 800, 1600),
       value.na = "grey",
       labels = c("< 200", "200 till 399", "400 till 799", "800 till 1600")
     ),
@@ -389,6 +389,18 @@ tmap_save(RASEperHa_combined,
           width = 14, height = 16, dpi = 300, units = "cm")
 
 
+# Percentage of MMAs that meet targets for RASE per Ha
+library(dplyr)
+
+AFO_RASE %>%
+  group_by(LandsdelNamn) %>%
+  summarise(
+    total = n(),
+    pass_count = sum(target_status_ha %in% c("High productivity pass", "Low productivity pass"), na.rm = TRUE),
+    percent_pass = 100 * pass_count / total
+  )
+
+
 ## Proportion RASE competitive ####
 
 # RASE competitive current (gradient)
@@ -398,9 +410,9 @@ RASEcomp_current <- tm_shape(AFO_RASE) +
     "RASEAndelGynnsam_mean", 
     fill.scale = tm_scale_intervals(
       values = "blues",# Auto blue gradient
-      breaks = c(0, 0.05, 0.1, 0.2, 0.4),
+      breaks = c(0, 0.05, 0.10, 0.20, 0.40),
       value.na = "grey",   # Color for NA values
-      labels = c("< 5%", "5 till 10%", "10 till 20%", "20 till 40%")
+      labels = c("< 5%", "5 till 9%", "10 till 19%", "20 till 40%")
     ),
     fill.legend = tm_legend(title = "Andel gynnsam") 
   ) +
@@ -536,3 +548,14 @@ RASEcomp_combined
 tmap_save(RASEcomp_combined, 
           filename = "//storage-um.slu.se/restricted$/vfm/Vilt-Skog/Moose-Targets/Results/Joseph/RASE_comp/Maps/RASE_competative_combined.png",
           width = 21, height = 16, dpi = 300, units = "cm")
+
+# Percentage of MMAs that meet targets for RASE gynnsam
+library(dplyr)
+
+AFO_RASE %>%
+  group_by(LandsdelNamn) %>%
+  summarise(
+    total = n(),
+    pass_count = sum(target_status_gy %in% c("High productivity pass", "Low productivity pass"), na.rm = TRUE),
+    percent_pass = 100 * pass_count / total
+  )

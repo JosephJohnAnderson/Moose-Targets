@@ -774,7 +774,7 @@ glm_RASE_comp_N <- glmmTMB(RASEAndelGynnsam_mean ~
                                               scale(AntalTallarHa_mean) +
                                               scale(AntalBjorkarHa_mean) +
                                               scale(AndelRojt...18_mean) +
-                                              scale(proportion_young_forest_mean) +
+                                              scale(proportion_young_forest_mean +
                                               scale(prop_snow_30_plus_imputed_mean),
                                             family = beta_family(link = "logit"),
                                             data = RASE_data_Norrland)

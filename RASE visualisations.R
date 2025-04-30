@@ -278,7 +278,7 @@ RASEperHa_current <- tm_shape(AFO_RASE) +
     ),
     fill.legend = tm_legend(title = "Stammar per hektar") 
   ) +
-  tm_title("RASE st/ha", size = 1.0) +
+  tm_title("RASE per ha", size = 1.0) +
   tm_shape(AFO_RASE) +
   tm_fill(
     "Registreri",
@@ -313,7 +313,7 @@ RASEperHa_target <- tm_shape(AFO_RASE) +
     value.na = "grey",
     labels = c("< 200", "200 till 399", "> 400") ),
     fill.legend = tm_legend(title = "Stammar per hektar")) +
-  tm_title("RASE st/ha målstatus", size = 1.0) +
+  tm_title("RASE per målstatus", size = 1.0) +
   tm_shape(AFO_RASE) +
   tm_fill(
     "Registreri",
@@ -358,13 +358,13 @@ RASEperHa_target_status <- tm_shape(AFO_RASE) +
             na.value = "grey"
           ),
           fill.legend = tm_legend(
-            title = "Uppfyllt mål?",
+            title = "Mål uppfyllt?",
             show = TRUE,
             na.text = "NA"
           )
   ) +
   tm_borders(col = "black", lwd = 1.5) +
-  tm_title("RASE st/ha målstatus", size = 1.0) +
+  tm_title("RASE per ha målstatus", size = 1.0) +
   tm_layout(
     legend.outside = FALSE,
     legend.position = c(0.0, 1.0),
@@ -489,7 +489,7 @@ RASEcomp_target_status <- tm_shape(AFO_RASE) +
             na.value = "grey"
           ),
           fill.legend = tm_legend(
-            title = "Uppfyllt mål?",
+            title = "Mål uppfyllt?",
             show = TRUE,
             na.text = "NA"
           )
@@ -521,9 +521,9 @@ RASEcomp_change_map <- tm_shape(AFO_RASE_change) +
       labels = c("> -5%", "0 till -5 %", "0 till +5 %", "> +5 %"),
       value.na = "grey"  # Color for NA values
     ),
-    fill.legend = tm_legend(title = "Förändringsandel")
+    fill.legend = tm_legend(title = "Andel gynnsam")
   ) +
-  tm_title("RASE förändringandel gynnsam", size = 1.0) +
+  tm_title("RASE förändring gynnsam", size = 1.0) +
   tm_shape(AFO_RASE_change) +
   tm_borders(col = "black", lwd = 1.5)+
   tm_layout(

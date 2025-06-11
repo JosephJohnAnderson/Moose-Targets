@@ -1355,3 +1355,18 @@ tab_model(glm_RASE_comp_chg_fwd, glm_RASE_comp_chg_N_fwd, glm_RASE_comp_chg_S_fw
           #show.bic = TRUE,
           #show.icc = FALSE,
           file = "~/GitHub/Moose-Targets/Tables/RASE_comp_change_abin_table.html")
+
+# Try the modelsummary package for R^2 values
+library(modelsummary)
+
+modelsummary(
+  list("Sverige" = glm_RASE_comp_chg_fwd,
+       "Norland" = glm_RASE_comp_chg_N_fwd,
+       "Svealand" = glm_RASE_comp_chg_S_fwd,
+       "Götaland" = glm_RASE_comp_chg_G_fwd),
+  statistic = "std.error",
+  gof_map = c("r.squared", "adj.r.squared", "nobs", "logLik", "AIC", "RMSE"),
+  output = "html",
+  stars = TRUE,
+  file = "~/GitHub/Moose-Targets/Tables/RASE_comp_change_modelsummary_r2.html"
+)

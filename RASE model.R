@@ -218,7 +218,7 @@ filtered_cor[abs(filtered_cor) <= 0.7 | abs(filtered_cor) == 1] <- NA
 # View the filtered correlation matrix
 filtered_cor
 
-        # Select the cliamte variables with heighest AIC
+        # Select the climate variables with highest AIC
 # Individual climate models
 glm_RASE_Ha_temp <- glmer.nb(AntalRASEHa ~ scale(`Mean_seasonal_temp[c]`) + (1 | InvAr) + (1 | Registreri), data = RASE_data_NA)
 glm_RASE_Ha_precip <- glmer.nb(AntalRASEHa ~ scale(`Mean_seasonal_precipitation[mm]`) + (1 | InvAr) + (1 | Registreri), data = RASE_data_NA)
@@ -272,13 +272,22 @@ drop1(glm_RASE_Ha, test = "Chisq")
 
 # Create a reduced model from these results
 glm_RASE_Ha_reduced <- glmer.nb(AntalRASEHa ~ 
-                                  scale(AntalBjorkarHa) + # competators
+                                  scale(AntalBjorkarHa) + scale(AntalTallarHa) + # competitors
+                                  scale(Älgtäthet.i.vinterstam) + scale(ungulate_index) + # browsers
                                   scale(youngforest_area_ha) + scale(Medelbestandshojd) + scale(AndelRojt...18) + scale(BestandAlder) + # forest
                                   scale(`mean_seasonal_snowdepth[cm]`) + #weather
                                   (1 | Registreri) + (1 | InvAr),  
                                 data = RASE_data_NA)
 
 summary(glm_RASE_Ha_reduced)
+
+# Check variance inflation factor (VIF)
+vif(glm_RASE_Ha_reduced)
+
+# Check for over dispersal
+glm_RASE_Ha_reduced_simres <- simulateResiduals(glm_RASE_Ha_reduced)
+testDispersion(glm_RASE_Ha_reduced_simres)
+testResiduals(glm_RASE_Ha_reduced_simres)
 
 # Once happy with model type and variables Run model selection 
 options(na.action = "na.fail")  # Prevent `dredge` from failing silently due to missing data
@@ -295,7 +304,7 @@ summary(best_glm_RASE)
 
 # Plot fixed effects from the GLMM
 # Extract coefficients for the fixed effects
-coef_glm <- summary(best_glm_RASE)$coefficients
+coef_glm <- summary(glm_RASE_Ha_reduced)$coefficients
 fixed_effects_glm <- data.frame(
   Term = rownames(coef_glm),
   Estimate = coef_glm[, "Estimate"],
@@ -317,26 +326,27 @@ fixed_effects_glm$Significance <- case_when(
 
 # Rename terms using recode (without !!!)
 fixed_effects_glm$Term <- dplyr::recode(fixed_effects_glm$Term,
-                                        "scale(Älgtäthet.i.vinterstam)" = "Moose Density",        
-                                        "scale(FD1000)" = "Fallow Deer Density",
-                                        "scale(WB1000)" = "Wild Boar Density",
-                                        "scale(AntalTallarHa)" = "Number of Pine Trees per Ha",
-                                        "scale(AntalBjorkarHa)" = "Number of Birch Trees per Ha",
-                                        "scale(proportion_young_forest)" = "Proportion of Young Forest",
-                                        "scale(AndelBordigaMarker)" = "Proportion on Productive Land",
-                                        "scale(youngforest_area_ha)" = "Young Forest Area (Ha)",
-                                        "scale(BestandAlder)" = "Stand Age",
-                                        "scale(Medelbestandshojd)" = "Average stand height",
+                                        "scale(Älgtäthet.i.vinterstam)" = "Moose density",        
+                                        "scale(ungulate_index)" = "DER-index",
+                                        "scale(WB1000)" = "Wild boar density",
+                                        "scale(AntalTallarHa)" = "Pine density",
+                                        "scale(AntalBjorkarHa)" = "Birch density",
+                                        "scale(AntalOvrigtHa)" = "Other broadleaves density",
+                                        "scale(proportion_young_forest)" = "Proportion young forest",
+                                        "scale(AndelBordigaMarker)" = "Proportion on productive land",
+                                        "scale(youngforest_area_ha)" = "Young forest frea (Ha)",
+                                        "scale(BestandAlder)" = "Stand age",
+                                        "scale(Medelbestandshojd)" = "Stand height",
                                         "scale(AndelRojt...18)" = "Proportion PCT",
-                                        "scale(`mean_seasonal_snowdepth[cm]`)" = "Mean Seasonal Snow Depth", 
-                                        "scale(`Mean_seasonal_precipitation[mm]`)" = "Mean Seasonal Precipitation"
+                                        "scale(`mean_seasonal_snowdepth[cm]`)" = "Mean seasonal snow depth", 
+                                        "scale(`Mean_seasonal_precipitation[mm]`)" = "Mean seasonal precipitation"
 )
 
 
 # Plot with ggplot2
 RASE_Ha_plot <- ggplot(fixed_effects_glm, aes(x = Term, y = Estimate, ymin = Estimate - 1.96 * SE, ymax = Estimate + 1.96 * SE)) +
                 geom_pointrange() +
-                geom_hline(yintercept = 0, linetype = "solid", size = 1.2, color = "black") +  # Add thick line at 0
+                geom_hline(yintercept = 0, linetype = "dashed", size = 1.0, color = "black") +  # Add thick line at 0
                 geom_text(aes(label = Significance), vjust = -1, size = 5) +  # Add significance asterisks
                 coord_flip() +  # To flip the x-axis for better readability
                 theme_classic() +
@@ -346,6 +356,8 @@ RASE_Ha_plot <- ggplot(fixed_effects_glm, aes(x = Term, y = Estimate, ymin = Est
 RASE_Ha_plot
   
 # Export with ggsave 
+# ~/GitHub/Moose-Targets/Plots
+# 
 ggsave("RASE_Ha_plot.tiff", plot = RASE_Ha_plot, device = NULL, 
        path = "~/GitHub/Moose-Targets/Plots", scale = 1, width = 14, 
        height = 14, dpi = 300, limitsize = TRUE, units = "cm")

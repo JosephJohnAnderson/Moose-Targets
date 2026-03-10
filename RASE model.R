@@ -334,7 +334,7 @@ fixed_effects_glm$Term <- dplyr::recode(fixed_effects_glm$Term,
                                         "scale(AntalOvrigtHa)" = "Other broadleaves density",
                                         "scale(proportion_young_forest)" = "Proportion young forest",
                                         "scale(AndelBordigaMarker)" = "Proportion on productive land",
-                                        "scale(youngforest_area_ha)" = "Young forest frea (Ha)",
+                                        "scale(youngforest_area_ha)" = "Young forest area",
                                         "scale(BestandAlder)" = "Stand age",
                                         "scale(Medelbestandshojd)" = "Stand height",
                                         "scale(AndelRojt...18)" = "Proportion PCT",
@@ -346,20 +346,20 @@ fixed_effects_glm$Term <- dplyr::recode(fixed_effects_glm$Term,
 # Plot with ggplot2
 RASE_Ha_plot <- ggplot(fixed_effects_glm, aes(x = Term, y = Estimate, ymin = Estimate - 1.96 * SE, ymax = Estimate + 1.96 * SE)) +
                 geom_pointrange() +
-                geom_hline(yintercept = 0, linetype = "dashed", size = 1.0, color = "black") +  # Add thick line at 0
+                geom_hline(yintercept = 0, linetype = "dashed", size = 0.8, color = "black") +  # Add thick line at 0
                 geom_text(aes(label = Significance), vjust = -1, size = 5) +  # Add significance asterisks
                 coord_flip() +  # To flip the x-axis for better readability
                 theme_classic() +
-                labs(title = "Fixed Effects on RASE per Ha.", y = "Estimate") +
+                labs(title = "Sweden", y = "Effect on RAWO density") +
                 theme(axis.text.x = element_text(size = 10))
 
 RASE_Ha_plot
   
 # Export with ggsave 
 # ~/GitHub/Moose-Targets/Plots
-# 
-ggsave("RASE_Ha_plot.tiff", plot = RASE_Ha_plot, device = NULL, 
-       path = "~/GitHub/Moose-Targets/Plots", scale = 1, width = 14, 
+# C:/Users/jhan0001/Documents/GitHub/P2_RASE/Figures
+ggsave("RASE_Ha_national.tiff", plot = RASE_Ha_plot, device = NULL, 
+       path = "C:/Users/jhan0001/Documents/GitHub/P2_RASE/Figures", scale = 0.8, width = 14, 
        height = 14, dpi = 300, limitsize = TRUE, units = "cm")
 
 
